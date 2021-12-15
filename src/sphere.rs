@@ -4,7 +4,7 @@ use crate::ray::{Ray, RayTransformer};
 pub(crate) struct Sphere {
     pub(crate) center: Vec3,
     pub(crate) radius: f64,
-    pub(crate) color: Vec3,
+    pub(crate) color: Vec3<u8>,
 }
 
 impl RayTransformer for Sphere {

@@ -1,4 +1,7 @@
-use std::{ops::{Add, Index, Sub, Mul, Div}, iter::Sum};
+use std::{
+    iter::Sum,
+    ops::{Add, Div, Index, Mul, Sub},
+};
 
 #[derive(Clone, Copy)]
 pub struct Vec3<T = f64> {
@@ -65,7 +68,10 @@ where
     }
 }
 
-impl <T> Vec3<T> where T: Mul<Output = T> + Add<Output=T> + Sum<T> + Copy {
+impl<T> Vec3<T>
+where
+    T: Mul<Output = T> + Add<Output = T> + Sum<T> + Copy,
+{
     pub fn dot(&self, other: &Self) -> T {
         (0..3).map(|i| self[i] * other[i]).sum()
     }
@@ -87,15 +93,15 @@ impl Length<f64> for Vec3<f64> {
     }
 }
 
-impl <T> Vec3<T> where Vec3<T>: Length<T>, T: Div<Output = T> + Copy {
+impl<T> Vec3<T>
+where
+    Vec3<T>: Length<T>,
+    T: Div<Output = T> + Copy,
+{
     pub fn normalized(&self) -> Self {
         let l = self.length();
         Self {
-            data: [
-                self[0] / l,
-                self[1] / l,
-                self[2] / l,
-            ]
+            data: [self[0] / l, self[1] / l, self[2] / l],
         }
     }
 }

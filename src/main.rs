@@ -22,7 +22,7 @@ pub(crate) struct Scene {
     pub(crate) width: u32,
     pub(crate) height: u32,
     pub(crate) fov: f64,
-    pub(crate) sphere: Sphere,
+    pub(crate) spheres: Vec<Sphere>,
 }
 
 impl Scene {
@@ -31,7 +31,9 @@ impl Scene {
         let fov_adjustment = (self.fov.to_radians() / 2.0).tan();
         let aspect_ratio = (self.width as f64) / (self.height as f64);
         Coord {
-            x: (2.0 * ((coord.x + 0.5) / (self.width as f64)) - 1.0) * aspect_ratio * fov_adjustment,
+            x: (2.0 * ((coord.x + 0.5) / (self.width as f64)) - 1.0)
+                * aspect_ratio
+                * fov_adjustment,
             y: (-(2.0 * ((coord.y + 0.5) / (self.height as f64)) - 1.0)) * fov_adjustment,
             state: World,
         }
@@ -52,13 +54,11 @@ impl Scene {
                     y: y as f64,
                     state: Screen,
                 });
-                let ray = self.sphere.transform(ray);
-                let pixel = Rgba::from_channels(
-                    (255.0 * ray.color[0]) as u8,
-                    (255.0 * ray.color[1]) as u8,
-                    (255.0 * ray.color[2]) as u8,
-                    255,
-                );
+                let ray = self
+                    .spheres
+                    .iter()
+                    .fold(ray, |ray, sphere| sphere.transform(ray));
+                let pixel = Rgba::from_channels(ray.color[0], ray.color[1], ray.color[2], 255);
                 img.put_pixel(x, y, pixel);
             }
         }
@@ -67,15 +67,27 @@ impl Scene {
 }
 
 fn main() {
+    let mut spheres = Vec::new();
+    spheres.push(Sphere {
+        center: (0.0, 0.0, -5.0).into(),
+        radius: 1.0,
+        color: (102, 255, 102).into(),
+    });
+    spheres.push(Sphere {
+        center: (3.0, 2.0, -4.0).into(),
+        radius: 2.0,
+        color: (255, 102, 102).into(),
+    });
+    spheres.push(Sphere {
+        center: (-2.0, 2.0, -6.0).into(),
+        radius: 2.0,
+        color: (102, 102, 255).into(),
+    });
     let scene = Scene {
         width: 800,
         height: 600,
         fov: 90.0,
-        sphere: Sphere {
-            center: (0.0, 0.0, -5.0).into(),
-            radius: 1.0,
-            color: (0.4, 1.0, 0.4).into(),
-        },
+        spheres,
     };
     let img = scene.render();
     img.save("output.png").expect("Failed to save image.");

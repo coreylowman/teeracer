@@ -4,7 +4,7 @@ pub(crate) struct Ray {
     pub(crate) origin: Vec3,
     pub(crate) direction: Vec3,
     pub(crate) length: f64,
-    pub(crate) color: Vec3,
+    pub(crate) color: Vec3<u8>,
 }
 
 impl Ray {
@@ -21,7 +21,7 @@ impl Default for Ray {
             origin: Default::default(),
             direction: Default::default(),
             length: f64::INFINITY,
-            color: (0.0, 0.0, 0.0).into(),
+            color: (0, 0, 0).into(),
         }
     }
 }
