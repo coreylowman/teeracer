@@ -1,7 +1,6 @@
 mod linalg;
 mod ray;
 mod sphere;
-use std::iter::{FlatMap, Map};
 
 use image::{DynamicImage, GenericImage, Pixel, Rgba};
 
@@ -22,7 +21,7 @@ pub(crate) struct Scene {
     pub(crate) width: u32,
     pub(crate) height: u32,
     pub(crate) fov: f64,
-    pub(crate) spheres: Vec<Sphere>,
+    pub(crate) transforms: Vec<Box<dyn RayTransformer>>,
 }
 
 impl Scene {
@@ -54,10 +53,7 @@ impl Scene {
                     y: y as f64,
                     state: Screen,
                 });
-                let ray = self
-                    .spheres
-                    .iter()
-                    .fold(ray, |ray, sphere| sphere.transform(ray));
+                let ray = self.transforms.iter().fold(ray, |ray, t| t.transform(ray));
                 let pixel = Rgba::from_channels(ray.color[0], ray.color[1], ray.color[2], 255);
                 img.put_pixel(x, y, pixel);
             }
@@ -67,27 +63,27 @@ impl Scene {
 }
 
 fn main() {
-    let mut spheres = Vec::new();
-    spheres.push(Sphere {
+    let mut transforms: Vec<Box<dyn RayTransformer>> = Vec::new();
+    transforms.push(Box::new(Sphere {
         center: (0.0, 0.0, -5.0).into(),
         radius: 1.0,
         color: (102, 255, 102).into(),
-    });
-    spheres.push(Sphere {
+    }));
+    transforms.push(Box::new(Sphere {
         center: (3.0, 2.0, -4.0).into(),
         radius: 2.0,
         color: (255, 102, 102).into(),
-    });
-    spheres.push(Sphere {
+    }));
+    transforms.push(Box::new(Sphere {
         center: (-2.0, 2.0, -6.0).into(),
         radius: 2.0,
         color: (102, 102, 255).into(),
-    });
+    }));
     let scene = Scene {
         width: 800,
         height: 600,
         fov: 90.0,
-        spheres,
+        transforms,
     };
     let img = scene.render();
     img.save("output.png").expect("Failed to save image.");
