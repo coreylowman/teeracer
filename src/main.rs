@@ -1,14 +1,12 @@
 mod linalg;
-mod plane;
 mod ray;
-mod sphere;
+mod objects;
 
 use image::{DynamicImage, GenericImage, Pixel, Rgba};
 
 use crate::linalg::Vec3;
-use crate::plane::Plane;
+use crate::objects::{Plane, Sphere};
 use crate::ray::{Ray, RayTransformer};
-use crate::sphere::Sphere;
 
 struct Screen;
 struct World;
