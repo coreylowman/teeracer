@@ -1,10 +1,12 @@
 mod linalg;
+mod plane;
 mod ray;
 mod sphere;
 
 use image::{DynamicImage, GenericImage, Pixel, Rgba};
 
 use crate::linalg::Vec3;
+use crate::plane::Plane;
 use crate::ray::{Ray, RayTransformer};
 use crate::sphere::Sphere;
 
@@ -78,6 +80,16 @@ fn main() {
         center: (-2.0, 2.0, -6.0).into(),
         radius: 2.0,
         color: (102, 102, 255).into(),
+    }));
+    transforms.push(Box::new(Plane {
+        center: (0.0, -2.0, 0.0).into(),
+        normal: (0.0, -1.0, 0.0).into(),
+        color: (150, 75, 0).into(),
+    }));
+    transforms.push(Box::new(Plane {
+        center: (0.0, 0.0, -20.0).into(),
+        normal: (0.0, 0.0, -1.0).into(),
+        color: (135, 206, 235).into(),
     }));
     let scene = Scene {
         width: 800,
