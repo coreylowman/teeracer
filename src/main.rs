@@ -3,12 +3,9 @@ mod linalg;
 mod objects;
 mod ray;
 
-use image::{DynamicImage, GenericImage, Pixel, Rgba};
-
 use crate::camera::Camera;
-use crate::linalg::Vec3;
 use crate::objects::{Plane, Sphere};
-use crate::ray::{Ray, RayTransformer};
+use crate::ray::RayTransformer;
 
 fn main() {
     let mut objects: Vec<Box<dyn RayTransformer>> = Vec::new();
