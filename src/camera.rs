@@ -17,7 +17,37 @@ pub(crate) struct Camera {
     pub(crate) height: u32,
 }
 
+impl Into<Rgba<u8>> for Vec3<u8> {
+    fn into(self) -> Rgba<u8> {
+        Rgba::from_channels(self[0], self[1], self[2], 255)
+    }
+}
+
 impl Camera {
+    pub fn render(&self, objects: Vec<Box<dyn RayTransformer>>) -> DynamicImage {
+        let mut img = DynamicImage::new_rgb8(self.width, self.height);
+        for x in 0..self.width {
+            for y in 0..self.height {
+                let ray = self.ray_through(x, y);
+                let ray = objects.iter().fold(ray, |ray, t| t.transform(ray));
+                img.put_pixel(x, y, ray.color.into());
+            }
+        }
+        img
+    }
+}
+
+impl Camera {
+    fn ray_through(&self, x: u32, y: u32) -> Ray {
+        let coord = self.to_world(Coord {
+            x: x as f64,
+            y: y as f64,
+            state: ScreenCoord,
+        });
+        let direction: Vec3 = (coord.x, coord.y, -1.0).into();
+        Ray::at(direction.normalized())
+    }
+
     fn to_world(&self, coord: Coord<ScreenCoord>) -> Coord<WorldCoord> {
         assert!(self.width > self.height);
         let fov_adjustment = (self.fov.to_radians() / 2.0).tan();
@@ -29,28 +59,5 @@ impl Camera {
             y: (-(2.0 * ((coord.y + 0.5) / (self.height as f64)) - 1.0)) * fov_adjustment,
             state: WorldCoord,
         }
-    }
-
-    fn shoot_at(&self, coord: Coord<ScreenCoord>) -> Ray {
-        let coord = self.to_world(coord);
-        let direction: Vec3 = (coord.x, coord.y, -1.0).into();
-        Ray::at(direction.normalized())
-    }
-
-    pub fn render(&self, objects: Vec<Box<dyn RayTransformer>>) -> DynamicImage {
-        let mut img = DynamicImage::new_rgb8(self.width, self.height);
-        for x in 0..self.width {
-            for y in 0..self.height {
-                let ray = self.shoot_at(Coord {
-                    x: x as f64,
-                    y: y as f64,
-                    state: ScreenCoord,
-                });
-                let ray = objects.iter().fold(ray, |ray, t| t.transform(ray));
-                let pixel = Rgba::from_channels(ray.color[0], ray.color[1], ray.color[2], 255);
-                img.put_pixel(x, y, pixel);
-            }
-        }
-        img
     }
 }
