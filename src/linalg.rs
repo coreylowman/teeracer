@@ -44,13 +44,25 @@ impl<T> Index<usize> for Vec3<T> {
     }
 }
 
+impl<T> Mul<T> for Vec3<T>
+where
+    T: Mul<Output = T> + Copy,
+{
+    type Output = Self;
+    fn mul(self, rhs: T) -> Self::Output {
+        Self {
+            data: [self[0] * rhs, self[1] * rhs, self[2] * rhs],
+        }
+    }
+}
+
 impl<T> Add for Vec3<T>
 where
     T: Add<Output = T> + Copy,
 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
-        Vec3 {
+        Self {
             data: [self[0] + rhs[0], self[1] + rhs[1], self[2] + rhs[2]],
         }
     }

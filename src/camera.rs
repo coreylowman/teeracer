@@ -1,5 +1,5 @@
 use crate::linalg::Vec3;
-use crate::ray::{Ray, RayTransformer};
+use crate::ray::{CanIntersect, Ray};
 use image::{DynamicImage, GenericImage, Pixel, Rgba};
 
 struct ScreenCoord;
@@ -24,13 +24,22 @@ impl Into<Rgba<u8>> for Vec3<u8> {
 }
 
 impl Camera {
-    pub fn render(&self, objects: Vec<Box<dyn RayTransformer>>) -> DynamicImage {
+    pub fn render(&self, objects: Vec<Box<dyn CanIntersect>>) -> DynamicImage {
         let mut img = DynamicImage::new_rgb8(self.width, self.height);
         for x in 0..self.width {
             for y in 0..self.height {
                 let ray = self.ray_through(x, y);
-                let ray = objects.iter().fold(ray, |ray, t| t.transform(ray));
-                img.put_pixel(x, y, ray.color.into());
+                let color = match objects
+                    .iter()
+                    .map(|obj| obj.intersect(ray))
+                    .filter(|i| i.is_some())
+                    .min()
+                    .flatten()
+                {
+                    Some(intersection) => intersection.material.color,
+                    None => (0, 0, 0).into(),
+                };
+                img.put_pixel(x, y, color.into());
             }
         }
         img

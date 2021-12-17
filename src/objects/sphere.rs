@@ -1,34 +1,37 @@
 use crate::linalg::Vec3;
-use crate::ray::{Ray, RayTransformer};
+use crate::ray::{CanIntersect, Intersection, Material, Ray};
 
 pub(crate) struct Sphere {
     pub(crate) center: Vec3,
     pub(crate) radius: f64,
-    pub(crate) color: Vec3<u8>,
+    pub(crate) material: Material,
 }
 
-impl RayTransformer for Sphere {
-    fn transform(&self, mut ray: Ray) -> Ray {
+impl CanIntersect for Sphere {
+    fn intersect(&self, ray: Ray) -> Option<Intersection> {
         let l = self.center - ray.origin;
         let adj = l.dot(&ray.direction);
         let d2 = l.dot(&l) - (adj * adj);
         let radius2 = self.radius * self.radius;
         if d2 > radius2 {
-            return ray;
+            return None;
         }
         let thc = (radius2 - d2).sqrt();
         let t0 = adj - thc;
         let t1 = adj + thc;
 
         if t0 < 0.0 && t1 < 0.0 {
-            return ray;
+            return None;
         }
 
-        let t = t0.min(t1);
-        if t < ray.length {
-            ray.length = t;
-            ray.color = self.color;
-        }
-        return ray;
+        let distance = t0.min(t1);
+        Some(Intersection {
+            distance,
+            result: Ray {
+                origin: ray.origin + ray.direction * distance,
+                direction: ray.direction, // TODO normal
+            },
+            material: self.material,
+        })
     }
 }
