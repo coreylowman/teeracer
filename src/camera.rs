@@ -36,7 +36,10 @@ impl Camera {
                     .min()
                     .flatten()
                 {
-                    Some(intersection) => intersection.material.color,
+                    Some(intersection) => {
+                        let p = ray.origin + ray.direction * intersection.distance;
+                        intersection.material.scatter(ray).1
+                    }
                     None => (0, 0, 0).into(),
                 };
                 img.put_pixel(x, y, color.into());

@@ -1,6 +1,6 @@
 use std::{
     iter::Sum,
-    ops::{Add, Div, Index, Mul, Sub},
+    ops::{Add, Div, Index, Mul, Neg, Sub},
 };
 
 #[derive(Clone, Copy)]
@@ -52,6 +52,30 @@ where
     fn mul(self, rhs: T) -> Self::Output {
         Self {
             data: [self[0] * rhs, self[1] * rhs, self[2] * rhs],
+        }
+    }
+}
+
+impl<T> Div<T> for Vec3<T>
+where
+    T: Div<Output = T> + Copy,
+{
+    type Output = Self;
+    fn div(self, rhs: T) -> Self::Output {
+        Self {
+            data: [self[0] / rhs, self[1] / rhs, self[2] / rhs],
+        }
+    }
+}
+
+impl<T> Neg for Vec3<T>
+where
+    T: Neg<Output = T> + Copy,
+{
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Self {
+            data: [-self[0], -self[1], -self[2]],
         }
     }
 }

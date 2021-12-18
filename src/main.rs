@@ -12,35 +12,35 @@ fn main() {
     objects.push(Box::new(Sphere {
         center: (0.0, 0.0, -5.0).into(),
         radius: 1.0,
-        material: Material {
+        material: Material::Lambertian {
             color: (102, 255, 102).into(),
         },
     }));
     objects.push(Box::new(Sphere {
         center: (3.0, 2.0, -4.0).into(),
         radius: 2.0,
-        material: Material {
+        material: Material::Lambertian {
             color: (255, 102, 102).into(),
         },
     }));
     objects.push(Box::new(Sphere {
         center: (-2.0, 2.0, -6.0).into(),
         radius: 2.0,
-        material: Material {
+        material: Material::Lambertian {
             color: (102, 102, 255).into(),
         },
     }));
     objects.push(Box::new(Plane {
         center: (0.0, -2.0, 0.0).into(),
         normal: (0.0, -1.0, 0.0).into(),
-        material: Material {
+        material: Material::Lambertian {
             color: (150, 75, 0).into(),
         },
     }));
     objects.push(Box::new(Plane {
         center: (0.0, 0.0, -20.0).into(),
         normal: (0.0, 0.0, -1.0).into(),
-        material: Material {
+        material: Material::Lambertian {
             color: (135, 206, 235).into(),
         },
     }));

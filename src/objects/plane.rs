@@ -15,10 +15,7 @@ impl CanIntersect for Plane {
         if denom > 1e-6 && distance >= 0.0 {
             Some(Intersection {
                 distance,
-                result: Ray {
-                    origin: ray.origin + ray.direction * distance,
-                    direction: ray.direction, // TODO reflect around normal
-                },
+                normal: self.normal,
                 material: self.material,
             })
         } else {

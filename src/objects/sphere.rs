@@ -25,12 +25,16 @@ impl CanIntersect for Sphere {
         }
 
         let distance = t0.min(t1);
+        let p = ray.origin + ray.direction * distance;
+        let outward_normal = (p - self.center) / self.radius;
+        let normal = if outward_normal.dot(&ray.direction) < 0.0 {
+            outward_normal
+        } else {
+            -outward_normal
+        };
         Some(Intersection {
             distance,
-            result: Ray {
-                origin: ray.origin + ray.direction * distance,
-                direction: ray.direction, // TODO normal
-            },
+            normal,
             material: self.material,
         })
     }
