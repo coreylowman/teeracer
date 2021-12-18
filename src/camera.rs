@@ -1,6 +1,8 @@
 use crate::linalg::Vec3;
-use crate::ray::{CanIntersect, Ray};
+use crate::objects::Object;
+use crate::ray::{CanHit, Color, Ray};
 use image::{DynamicImage, GenericImage, Pixel, Rgba};
+use indicatif::ProgressBar;
 
 struct ScreenCoord;
 struct WorldCoord;
@@ -15,6 +17,8 @@ pub(crate) struct Camera {
     pub(crate) fov: f64,
     pub(crate) width: u32,
     pub(crate) height: u32,
+    pub(crate) bounces: usize,
+    pub(crate) samples: usize,
 }
 
 impl Into<Rgba<u8>> for Vec3<u8> {
@@ -24,25 +28,44 @@ impl Into<Rgba<u8>> for Vec3<u8> {
 }
 
 impl Camera {
-    pub fn render(&self, objects: Vec<Box<dyn CanIntersect>>) -> DynamicImage {
+    pub fn render(&self, objects: Vec<Object>) -> DynamicImage {
         let mut img = DynamicImage::new_rgb8(self.width, self.height);
+        let mut progress = ProgressBar::new((self.width * self.height) as u64);
         for x in 0..self.width {
             for y in 0..self.height {
-                let ray = self.ray_through(x, y);
-                let color = match objects
-                    .iter()
-                    .map(|obj| obj.intersect(ray))
-                    .filter(|i| i.is_some())
-                    .min()
-                    .flatten()
-                {
-                    Some(intersection) => {
-                        let p = ray.origin + ray.direction * intersection.distance;
-                        intersection.material.scatter(ray).1
+                let mut avg_color: Vec3<f64> = (0.0, 0.0, 0.0).into();
+                let mut num_colors = 0;
+                for _ in 0..self.samples {
+                    let mut ray = self.ray_through(x, y);
+                    let mut hits = Vec::with_capacity(self.bounces);
+                    while hits.len() < self.bounces {
+                        let opt_hit = objects
+                            .iter()
+                            .map(|obj| obj.hit_by(ray))
+                            .filter(|h| h.is_some())
+                            .min()
+                            .flatten();
+                        hits.push(opt_hit);
+                        match opt_hit {
+                            Some(hit) => match hit.scatter(ray) {
+                                Ok(Some(scattered_ray)) => ray = scattered_ray,
+                                Ok(None) => break,
+                                Err(_) => break,
+                            },
+                            None => break,
+                        };
                     }
-                    None => (0, 0, 0).into(),
-                };
+
+                    let mut color: Vec3<f64> = (0.0, 0.0, 0.0).into();
+                    while let Some(Some(hit)) = hits.pop() {
+                        hit.attenuate(&mut color)
+                    }
+                    avg_color += color;
+                    num_colors += 1;
+                }
+                let color: Vec3<u8> = (avg_color / num_colors as f64).into();
                 img.put_pixel(x, y, color.into());
+                progress.inc(1);
             }
         }
         img

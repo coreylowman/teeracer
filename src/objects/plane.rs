@@ -1,5 +1,5 @@
 use crate::linalg::Vec3;
-use crate::ray::{CanIntersect, Intersection, Material, Ray};
+use crate::ray::{CanHit, Hit, Material, Ray};
 
 pub(crate) struct Plane {
     pub(crate) center: Vec3,
@@ -7,15 +7,17 @@ pub(crate) struct Plane {
     pub(crate) material: Material,
 }
 
-impl CanIntersect for Plane {
-    fn intersect(&self, ray: Ray) -> Option<Intersection> {
+impl CanHit for Plane {
+    fn hit_by(&self, ray: Ray) -> Option<Hit> {
         let denom = self.normal.dot(&ray.direction);
         let v = self.center - ray.origin;
         let distance = v.dot(&self.normal) / denom;
-        if denom > 1e-6 && distance >= 0.0 {
-            Some(Intersection {
+        let position = ray.origin + ray.direction * distance;
+        if distance.is_finite() && distance >= 1e-3 {
+            Some(Hit {
+                position,
                 distance,
-                normal: self.normal,
+                normal: -self.normal,
                 material: self.material,
             })
         } else {

@@ -1,11 +1,20 @@
+use rand::{prelude::Distribution, thread_rng};
+use rand_distr::{Standard, StandardNormal};
 use std::{
     iter::Sum,
-    ops::{Add, Div, Index, Mul, Neg, Sub},
+    ops::{Add, AddAssign, Div, Index, IndexMut, Mul, MulAssign, Neg, Sub},
 };
 
 #[derive(Clone, Copy)]
 pub struct Vec3<T = f64> {
     data: [T; 3],
+}
+
+impl Vec3<f64> {
+    pub(crate) fn near_zero(&self) -> bool {
+        const Z: f64 = 1e-6;
+        self[0].abs() < Z && self[1] < Z && self[2] < Z
+    }
 }
 
 impl<T> From<T> for Vec3<T>
@@ -18,6 +27,7 @@ where
         }
     }
 }
+
 impl<T> From<(T, T, T)> for Vec3<T> {
     fn from(t: (T, T, T)) -> Self {
         Self {
@@ -44,6 +54,12 @@ impl<T> Index<usize> for Vec3<T> {
     }
 }
 
+impl<T> IndexMut<usize> for Vec3<T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.data[index]
+    }
+}
+
 impl<T> Mul<T> for Vec3<T>
 where
     T: Mul<Output = T> + Copy,
@@ -52,6 +68,18 @@ where
     fn mul(self, rhs: T) -> Self::Output {
         Self {
             data: [self[0] * rhs, self[1] * rhs, self[2] * rhs],
+        }
+    }
+}
+
+impl<T> Mul<Vec3<T>> for Vec3<T>
+where
+    T: Mul<Output = T> + Copy,
+{
+    type Output = Self;
+    fn mul(self, rhs: Vec3<T>) -> Self::Output {
+        Self {
+            data: [self[0] * rhs[0], self[1] * rhs[1], self[2] * rhs[2]],
         }
     }
 }
@@ -92,6 +120,17 @@ where
     }
 }
 
+impl<T> AddAssign for Vec3<T>
+where
+    T: AddAssign + Copy,
+{
+    fn add_assign(&mut self, rhs: Self) {
+        for i in 0..3 {
+            self[i] += rhs[i];
+        }
+    }
+}
+
 impl<T> Sub for Vec3<T>
 where
     T: Sub<Output = T> + Copy,
@@ -106,10 +145,36 @@ where
 
 impl<T> Vec3<T>
 where
+    Standard: Distribution<T>,
+    StandardNormal: Distribution<T>,
+    Vec3<T>: Length<T>,
+    T: Div<Output = T> + Mul<Output = T> + Copy,
+{
+    pub(crate) fn random_unit() -> Self {
+        let mut rng = thread_rng();
+        Self {
+            data: [
+                StandardNormal.sample(&mut rng),
+                StandardNormal.sample(&mut rng),
+                StandardNormal.sample(&mut rng),
+            ],
+        }
+        .normalized()
+    }
+}
+
+impl<T> Vec3<T>
+where
     T: Mul<Output = T> + Add<Output = T> + Sum<T> + Copy,
 {
-    pub fn dot(&self, other: &Self) -> T {
+    pub(crate) fn dot(&self, other: &Self) -> T {
         (0..3).map(|i| self[i] * other[i]).sum()
+    }
+}
+
+impl Vec3<f64> {
+    pub(crate) fn reflect(&self, normal: &Self) -> Self {
+        *self - (*normal * self.dot(normal)) * 2.0
     }
 }
 
