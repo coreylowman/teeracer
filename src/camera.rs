@@ -1,8 +1,9 @@
 use crate::linalg::Vec3;
 use crate::objects::Object;
-use crate::ray::{CanHit, Color, Ray};
+use crate::ray::{CanHit, Ray};
 use image::{DynamicImage, GenericImage, Pixel, Rgba};
 use indicatif::ProgressBar;
+use rand::prelude::{thread_rng, Rng};
 
 struct ScreenCoord;
 struct WorldCoord;
@@ -30,11 +31,10 @@ impl Into<Rgba<u8>> for Vec3<u8> {
 impl Camera {
     pub fn render(&self, objects: Vec<Object>) -> DynamicImage {
         let mut img = DynamicImage::new_rgb8(self.width, self.height);
-        let mut progress = ProgressBar::new((self.width * self.height) as u64);
+        let progress = ProgressBar::new((self.width * self.height) as u64);
         for x in 0..self.width {
             for y in 0..self.height {
                 let mut avg_color: Vec3<f64> = (0.0, 0.0, 0.0).into();
-                let mut num_colors = 0;
                 for _ in 0..self.samples {
                     let mut ray = self.ray_through(x, y);
                     let mut hits = Vec::with_capacity(self.bounces);
@@ -46,12 +46,8 @@ impl Camera {
                             .min()
                             .flatten();
                         hits.push(opt_hit);
-                        match opt_hit {
-                            Some(hit) => match hit.scatter(ray) {
-                                Ok(Some(scattered_ray)) => ray = scattered_ray,
-                                Ok(None) => break,
-                                Err(_) => break,
-                            },
+                        match opt_hit.map(|hit| hit.scatter(ray)).flatten() {
+                            Some(scattered_ray) => ray = scattered_ray,
                             None => break,
                         };
                     }
@@ -61,9 +57,8 @@ impl Camera {
                         hit.attenuate(&mut color)
                     }
                     avg_color += color;
-                    num_colors += 1;
                 }
-                let color: Vec3<u8> = (avg_color / num_colors as f64).into();
+                let color: Vec3<u8> = (avg_color / self.samples as f64).into();
                 img.put_pixel(x, y, color.into());
                 progress.inc(1);
             }
@@ -84,14 +79,14 @@ impl Camera {
     }
 
     fn to_world(&self, coord: Coord<ScreenCoord>) -> Coord<WorldCoord> {
-        assert!(self.width > self.height);
         let fov_adjustment = (self.fov.to_radians() / 2.0).tan();
         let aspect_ratio = (self.width as f64) / (self.height as f64);
+        let mut rng = thread_rng();
+        let x: f64 = coord.x + rng.gen_range(0.0..1.0);
+        let y: f64 = coord.y + rng.gen_range(0.0..1.0);
         Coord {
-            x: (2.0 * ((coord.x + 0.5) / (self.width as f64)) - 1.0)
-                * aspect_ratio
-                * fov_adjustment,
-            y: (-(2.0 * ((coord.y + 0.5) / (self.height as f64)) - 1.0)) * fov_adjustment,
+            x: (2.0 * (x / (self.width as f64 - 1.0)) - 1.0) * aspect_ratio * fov_adjustment,
+            y: (-(2.0 * (y / (self.height as f64 - 1.0)) - 1.0)) * fov_adjustment,
             state: WorldCoord,
         }
     }

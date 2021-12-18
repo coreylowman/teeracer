@@ -2,7 +2,7 @@ use rand::{prelude::Distribution, thread_rng};
 use rand_distr::{Standard, StandardNormal};
 use std::{
     iter::Sum,
-    ops::{Add, AddAssign, Div, Index, IndexMut, Mul, MulAssign, Neg, Sub},
+    ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Neg, Sub},
 };
 
 #[derive(Clone, Copy)]

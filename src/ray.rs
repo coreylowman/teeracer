@@ -94,12 +94,12 @@ impl Hit {
                 let color: Vec3<f64> = color.into();
                 *light = *light * color;
             }
-            Material::Metal { color, fuzz } => {
+            Material::Metal { color, fuzz: _ } => {
                 let color: Vec3<f64> = color.into();
                 *light = *light * color;
             }
             Material::Dielectric {
-                index_of_refraction,
+                index_of_refraction: _,
             } => {}
             Material::DiffuseLight { color } => {
                 *light = color.into();
@@ -107,19 +107,19 @@ impl Hit {
         }
     }
 
-    pub(crate) fn scatter(&self, ray: Ray) -> Result<Option<Ray>, Color> {
+    pub(crate) fn scatter(&self, ray: Ray) -> Option<Ray> {
         match self.material {
-            Material::Lambertian { color } => {
+            Material::Lambertian { color: _ } => {
                 let mut scatter_direction = self.normal + Vec3::random_unit();
                 if scatter_direction.near_zero() {
                     scatter_direction = self.normal;
                 }
-                Ok(Some(Ray {
+                Some(Ray {
                     origin: self.position,
                     direction: scatter_direction,
-                }))
+                })
             }
-            Material::Metal { color, fuzz } => {
+            Material::Metal { color: _, fuzz } => {
                 let reflected = ray.direction.reflect(&self.normal);
                 let mut noise = Vec3::random_unit();
                 if noise.dot(&self.normal) <= 0.0 {
@@ -127,18 +127,18 @@ impl Hit {
                 }
                 let direction = reflected + noise * fuzz;
                 if direction.dot(&self.normal) > 0.0 {
-                    Ok(Some(Ray {
+                    Some(Ray {
                         origin: self.position,
                         direction,
-                    }))
+                    })
                 } else {
-                    Ok(None)
+                    None
                 }
             }
             Material::Dielectric {
-                index_of_refraction,
-            } => Ok(None),
-            Material::DiffuseLight { color } => Err(color),
+                index_of_refraction: _,
+            } => None,
+            Material::DiffuseLight { color: _ } => None,
         }
     }
 }

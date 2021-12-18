@@ -15,11 +15,11 @@ fn main() {
     let mut objects: Vec<Object> = Vec::new();
     objects.push(
         Sphere {
-            center: (-3.0, 1.0, -4.0).into(),
+            center: (-2.5, 0.5, -4.0).into(),
             radius: 1.0,
             material: Material::Metal {
                 color: GREEN.into(),
-                fuzz: 1.0,
+                fuzz: 0.5,
             },
         }
         .into(),
@@ -41,16 +41,6 @@ fn main() {
         .into(),
     );
     objects.push(
-        Sphere {
-            center: (0.0, 1.0, -3.0).into(),
-            radius: 0.75,
-            material: Material::DiffuseLight {
-                color: (255, 255, 255).into(),
-            },
-        }
-        .into(),
-    );
-    objects.push(
         Plane {
             center: (0.0, -2.0, 0.0).into(),
             normal: (0.0, -1.0, 0.0).into(),
@@ -66,6 +56,26 @@ fn main() {
             normal: (0.0, 0.0, -1.0).into(),
             material: Material::Lambertian {
                 color: (135, 206, 235).into(),
+            },
+        }
+        .into(),
+    );
+    objects.push(
+        Sphere {
+            center: (0.0, 1.0, -3.0).into(),
+            radius: 0.75,
+            material: Material::DiffuseLight {
+                color: (255, 255, 255).into(),
+            },
+        }
+        .into(),
+    );
+    objects.push(
+        Sphere {
+            center: (0.0, 10.0, -3.0).into(),
+            radius: 0.75,
+            material: Material::DiffuseLight {
+                color: (255, 255, 255).into(),
             },
         }
         .into(),
