@@ -121,7 +121,7 @@ impl Hit {
             }
             Material::Metal { color: _, fuzz } => {
                 let reflected = ray.direction.reflect(&self.normal);
-                let mut noise = Vec3::random_unit();
+                let mut noise = Vec3::random_unit_in();
                 if noise.dot(&self.normal) <= 0.0 {
                     noise = -noise;
                 }

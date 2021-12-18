@@ -161,6 +161,11 @@ where
         }
         .normalized()
     }
+
+    pub(crate) fn random_unit_in() -> Self {
+        let mut rng = thread_rng();
+        Self::random_unit() * Standard.sample(&mut rng)
+    }
 }
 
 impl<T> Vec3<T>
