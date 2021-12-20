@@ -1,3 +1,4 @@
+use num_traits::Float;
 use rand::{prelude::Distribution, thread_rng};
 use rand_distr::{Standard, StandardNormal};
 use std::{
@@ -5,16 +6,9 @@ use std::{
     ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Neg, Sub},
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Vec3<T = f64> {
     data: [T; 3],
-}
-
-impl Vec3<f64> {
-    pub(crate) fn near_zero(&self) -> bool {
-        const Z: f64 = 1e-6;
-        self[0].abs() < Z && self[1] < Z && self[2] < Z
-    }
 }
 
 impl<T> From<T> for Vec3<T>
@@ -148,7 +142,7 @@ where
     Standard: Distribution<T>,
     StandardNormal: Distribution<T>,
     Vec3<T>: Length<T>,
-    T: Div<Output = T> + Mul<Output = T> + Copy,
+    T: Float + Div<Output = T> + Mul<Output = T> + Copy,
 {
     pub(crate) fn random_unit() -> Self {
         let mut rng = thread_rng();
@@ -161,11 +155,6 @@ where
         }
         .normalized()
     }
-
-    pub(crate) fn random_unit_in() -> Self {
-        let mut rng = thread_rng();
-        Self::random_unit() * Standard.sample(&mut rng)
-    }
 }
 
 impl<T> Vec3<T>
@@ -177,25 +166,26 @@ where
     }
 }
 
-impl Vec3<f64> {
-    pub(crate) fn reflect(&self, normal: &Self) -> Self {
-        *self - (*normal * self.dot(normal)) * 2.0
-    }
-}
-
 pub trait Length<T> {
+    fn length_squared(&self) -> T;
     fn length(&self) -> T;
 }
 
 impl Length<f32> for Vec3<f32> {
+    fn length_squared(&self) -> f32 {
+        self.dot(&self)
+    }
     fn length(&self) -> f32 {
-        self.dot(&self).sqrt()
+        self.length_squared().sqrt()
     }
 }
 
 impl Length<f64> for Vec3<f64> {
+    fn length_squared(&self) -> f64 {
+        self.dot(&self)
+    }
     fn length(&self) -> f64 {
-        self.dot(&self).sqrt()
+        self.length_squared().sqrt()
     }
 }
 
@@ -208,6 +198,17 @@ where
         let l = self.length();
         Self {
             data: [self[0] / l, self[1] / l, self[2] / l],
+        }
+    }
+}
+
+impl<T> Vec3<T>
+where
+    T: Copy,
+{
+    pub(crate) fn fill(&mut self, value: T) {
+        for i in 0..3 {
+            self[i] = value;
         }
     }
 }

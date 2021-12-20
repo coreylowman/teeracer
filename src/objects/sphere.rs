@@ -11,7 +11,7 @@ impl CanHit for Sphere {
     fn hit_by(&self, ray: Ray) -> Option<Hit> {
         let l = self.center - ray.origin;
         let adj = l.dot(&ray.direction);
-        let d2 = l.dot(&l) - (adj * adj);
+        let d2 = l.dot(&l) - adj * adj;
         let radius2 = self.radius * self.radius;
         if d2 > radius2 {
             return None;
@@ -25,13 +25,12 @@ impl CanHit for Sphere {
         }
 
         let distance = t0.min(t1);
+        if distance.is_infinite() {
+            return None;
+        }
+
         let position = ray.origin + ray.direction * distance;
-        let outward_normal = (position - self.center) / self.radius;
-        let normal = if outward_normal.dot(&ray.direction) < 0.0 {
-            outward_normal
-        } else {
-            -outward_normal
-        };
+        let normal = (position - self.center).normalized();
         Some(Hit {
             position,
             distance,

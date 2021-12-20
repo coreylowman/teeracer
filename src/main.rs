@@ -10,6 +10,16 @@ use crate::ray::Material;
 const RED: (u8, u8, u8) = (255, 102, 102);
 const GREEN: (u8, u8, u8) = (102, 255, 102);
 const BLUE: (u8, u8, u8) = (102, 102, 255);
+const WHITE: (u8, u8, u8) = (255, 255, 255);
+
+mod refraction {
+    pub const VACUUM: f64 = 1.0;
+    pub const AIR: f64 = 1.00029;
+    pub const ICE: f64 = 1.31;
+    pub const WATER: f64 = 1.33;
+    pub const CROWN_GLASS: f64 = 1.52;
+    pub const DIAMOND: f64 = 2.417;
+}
 
 fn main() {
     let mut objects: Vec<Object> = Vec::new();
@@ -19,7 +29,7 @@ fn main() {
             radius: 1.0,
             material: Material::Metal {
                 color: GREEN.into(),
-                fuzz: 0.5,
+                fuzz: 0.0,
             },
         }
         .into(),
@@ -41,11 +51,54 @@ fn main() {
         .into(),
     );
     objects.push(
+        Sphere {
+            center: (0.0, -0.5, -2.5).into(),
+            radius: 0.5,
+            // material: Material::Dielectric {
+            //     index_of_refraction: 1.5,
+            // },
+            material: Material::Lambertian {
+                color: WHITE.into(),
+            },
+        }
+        .into(),
+    );
+    objects.push(
+        Plane {
+            center: (-4.0, 0.0, 0.0).into(),
+            normal: (1.0, 0.0, 0.0).into(),
+            material: Material::Lambertian {
+                color: WHITE.into(),
+            },
+        }
+        .into(),
+    );
+    objects.push(
+        Plane {
+            center: (4.0, 0.0, 0.0).into(),
+            normal: (-1.0, 0.0, 0.0).into(),
+            material: Material::Lambertian {
+                color: WHITE.into(),
+            },
+        }
+        .into(),
+    );
+    objects.push(
         Plane {
             center: (0.0, -2.0, 0.0).into(),
+            normal: (0.0, 1.0, 0.0).into(),
+            material: Material::Lambertian {
+                color: WHITE.into(),
+            },
+        }
+        .into(),
+    );
+    objects.push(
+        Plane {
+            center: (0.0, 4.0, 0.0).into(),
             normal: (0.0, -1.0, 0.0).into(),
             material: Material::Lambertian {
-                color: (255, 255, 255).into(),
+                color: WHITE.into(),
             },
         }
         .into(),
@@ -53,9 +106,19 @@ fn main() {
     objects.push(
         Plane {
             center: (0.0, 0.0, -7.0).into(),
+            normal: (0.0, 0.0, 1.0).into(),
+            material: Material::Lambertian {
+                color: WHITE.into(),
+            },
+        }
+        .into(),
+    );
+    objects.push(
+        Plane {
+            center: (0.0, 0.0, 0.0).into(),
             normal: (0.0, 0.0, -1.0).into(),
             material: Material::Lambertian {
-                color: (135, 206, 235).into(),
+                color: WHITE.into(),
             },
         }
         .into(),
@@ -65,7 +128,7 @@ fn main() {
             center: (0.0, 1.0, -3.0).into(),
             radius: 0.75,
             material: Material::DiffuseLight {
-                color: (255, 255, 255).into(),
+                color: WHITE.into(),
             },
         }
         .into(),
@@ -75,7 +138,7 @@ fn main() {
             center: (0.0, 10.0, -3.0).into(),
             radius: 0.75,
             material: Material::DiffuseLight {
-                color: (255, 255, 255).into(),
+                color: WHITE.into(),
             },
         }
         .into(),
@@ -84,8 +147,8 @@ fn main() {
         width: 800,
         height: 600,
         fov: 90.0,
-        bounces: 50,
-        samples: 100,
+        bounces: 20,
+        samples: 50,
     };
     let img = camera.render(objects);
     img.save("output.png").expect("Failed to save image.");

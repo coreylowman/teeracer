@@ -12,16 +12,15 @@ impl CanHit for Plane {
         let denom = self.normal.dot(&ray.direction);
         let v = self.center - ray.origin;
         let distance = v.dot(&self.normal) / denom;
-        let position = ray.origin + ray.direction * distance;
-        if distance.is_finite() && distance >= 1e-3 {
-            Some(Hit {
-                position,
-                distance,
-                normal: -self.normal,
-                material: self.material,
-            })
-        } else {
-            None
+        if distance < 1e-3 || distance.is_infinite() {
+            return None;
         }
+        let position = ray.origin + ray.direction * distance;
+        Some(Hit {
+            position,
+            distance,
+            normal: self.normal,
+            material: self.material,
+        })
     }
 }

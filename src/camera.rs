@@ -53,12 +53,17 @@ impl Camera {
                     }
 
                     let mut color: Vec3<f64> = (0.0, 0.0, 0.0).into();
-                    while let Some(Some(hit)) = hits.pop() {
-                        hit.attenuate(&mut color)
+                    while let Some(opt_hit) = hits.pop() {
+                        match opt_hit {
+                            Some(hit) => hit.attenuate(&mut color),
+                            None => color.fill(0.0),
+                        }
                     }
                     avg_color += color;
                 }
-                let color: Vec3<u8> = (avg_color / self.samples as f64).into();
+                avg_color = avg_color / self.samples as f64;
+                let color: Vec3<u8> = avg_color.into();
+                // println!("x={}, y={} c={:?} p={:?}", x, y, avg_color, color);
                 img.put_pixel(x, y, color.into());
                 progress.inc(1);
             }
