@@ -2,7 +2,7 @@ use crate::linalg::Vec3;
 use crate::objects::Object;
 use crate::ray::{CanHit, Ray};
 use image::{DynamicImage, GenericImage, Pixel, Rgba};
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::{thread_rng, Rng};
 
 struct ScreenCoord;
@@ -31,13 +31,16 @@ impl Into<Rgba<u8>> for Vec3<u8> {
 impl Camera {
     pub fn render(&self, objects: Vec<Object>) -> DynamicImage {
         let mut img = DynamicImage::new_rgb8(self.width, self.height);
-        let progress = ProgressBar::new((self.width * self.height) as u64);
+        let progress = ProgressBar::new((self.width * self.height * self.samples as u32) as u64);
+        progress.set_style(
+            ProgressStyle::default_bar().template("{bar:40} {elapsed_precise}<{eta} {per_sec}"),
+        );
+        let mut hits = Vec::with_capacity(self.bounces);
         for x in 0..self.width {
             for y in 0..self.height {
                 let mut avg_color: Vec3<f64> = (0.0, 0.0, 0.0).into();
                 for _ in 0..self.samples {
                     let mut ray = self.ray_through(x, y);
-                    let mut hits = Vec::with_capacity(self.bounces);
                     while hits.len() < self.bounces {
                         let opt_hit = objects
                             .iter()
@@ -60,12 +63,12 @@ impl Camera {
                         }
                     }
                     avg_color += color;
+                    progress.inc(1);
                 }
                 avg_color = avg_color / self.samples as f64;
                 let color: Vec3<u8> = avg_color.into();
                 // println!("x={}, y={} c={:?} p={:?}", x, y, avg_color, color);
                 img.put_pixel(x, y, color.into());
-                progress.inc(1);
             }
         }
         img
@@ -90,8 +93,8 @@ impl Camera {
         let x: f64 = coord.x + rng.gen_range(0.0..1.0);
         let y: f64 = coord.y + rng.gen_range(0.0..1.0);
         Coord {
-            x: (2.0 * (x / (self.width as f64 - 1.0)) - 1.0) * aspect_ratio * fov_adjustment,
-            y: (-(2.0 * (y / (self.height as f64 - 1.0)) - 1.0)) * fov_adjustment,
+            x: (2.0 * (x / self.width as f64) - 1.0) * aspect_ratio * fov_adjustment,
+            y: (-(2.0 * (y / self.height as f64) - 1.0)) * fov_adjustment,
             state: WorldCoord,
         }
     }

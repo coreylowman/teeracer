@@ -1,10 +1,7 @@
 use num_traits::Float;
 use rand::{prelude::Distribution, thread_rng};
 use rand_distr::{Standard, StandardNormal};
-use std::{
-    iter::Sum,
-    ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Neg, Sub},
-};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3<T = f64> {
@@ -125,6 +122,28 @@ where
     }
 }
 
+impl<T> MulAssign for Vec3<T>
+where
+    T: MulAssign + Copy,
+{
+    fn mul_assign(&mut self, rhs: Self) {
+        for i in 0..3 {
+            self[i] *= rhs[i];
+        }
+    }
+}
+
+impl<T> DivAssign<T> for Vec3<T>
+where
+    T: DivAssign + Copy,
+{
+    fn div_assign(&mut self, rhs: T) {
+        for i in 0..3 {
+            self[i] /= rhs;
+        }
+    }
+}
+
 impl<T> Sub for Vec3<T>
 where
     T: Sub<Output = T> + Copy,
@@ -142,33 +161,51 @@ where
     Standard: Distribution<T>,
     StandardNormal: Distribution<T>,
     Vec3<T>: Length<T>,
-    T: Float + Div<Output = T> + Mul<Output = T> + Copy,
+    T: Float + DivAssign + Mul<Output = T> + MulAssign + Copy + Float,
 {
     pub(crate) fn random_unit() -> Self {
         let mut rng = thread_rng();
-        Self {
+        let mut v = Self {
             data: [
                 StandardNormal.sample(&mut rng),
                 StandardNormal.sample(&mut rng),
                 StandardNormal.sample(&mut rng),
             ],
+        };
+        v.normalize();
+        v
+    }
+
+    pub(crate) fn random_unit_in() -> Self {
+        let mut rng = thread_rng();
+        let mut v = Self {
+            data: [
+                StandardNormal.sample(&mut rng),
+                StandardNormal.sample(&mut rng),
+                StandardNormal.sample(&mut rng),
+            ],
+        };
+        let l = (Standard.sample(&mut rng).powi(3) * v.length()).recip();
+        for i in 0..3 {
+            v[i] *= l;
         }
-        .normalized()
+        v
     }
 }
 
 impl<T> Vec3<T>
 where
-    T: Mul<Output = T> + Add<Output = T> + Sum<T> + Copy,
+    T: Mul<Output = T> + Add<Output = T> + Copy,
 {
-    pub(crate) fn dot(&self, other: &Self) -> T {
-        (0..3).map(|i| self[i] * other[i]).sum()
+    pub(crate) fn dot(&self, rhs: &Self) -> T {
+        self[0] * rhs[0] + self[1] * rhs[1] + self[2] * rhs[2]
     }
 }
 
 pub trait Length<T> {
     fn length_squared(&self) -> T;
     fn length(&self) -> T;
+    fn is_unit(&self) -> bool;
 }
 
 impl Length<f32> for Vec3<f32> {
@@ -178,14 +215,33 @@ impl Length<f32> for Vec3<f32> {
     fn length(&self) -> f32 {
         self.length_squared().sqrt()
     }
+    fn is_unit(&self) -> bool {
+        (self.length() - 1.0).abs() <= 1e-6
+    }
 }
 
 impl Length<f64> for Vec3<f64> {
     fn length_squared(&self) -> f64 {
         self.dot(&self)
     }
+
     fn length(&self) -> f64 {
         self.length_squared().sqrt()
+    }
+
+    fn is_unit(&self) -> bool {
+        (self.length() - 1.0).abs() <= 1e-6
+    }
+}
+
+impl<T> Vec3<T>
+where
+    Vec3<T>: Length<T>,
+    T: Div<Output = T> + DivAssign + Copy,
+{
+    pub fn normalize(&mut self) {
+        let l = self.length();
+        *self /= l;
     }
 }
 

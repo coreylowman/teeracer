@@ -4,6 +4,7 @@ mod objects;
 mod ray;
 
 use crate::camera::Camera;
+use crate::linalg::Vec3;
 use crate::objects::{Object, Plane, Sphere};
 use crate::ray::Material;
 
@@ -65,6 +66,7 @@ fn main() {
     );
     objects.push(
         Plane {
+            // LEFT
             center: (-4.0, 0.0, 0.0).into(),
             normal: (1.0, 0.0, 0.0).into(),
             material: Material::Lambertian {
@@ -75,6 +77,7 @@ fn main() {
     );
     objects.push(
         Plane {
+            // RIGHT
             center: (4.0, 0.0, 0.0).into(),
             normal: (-1.0, 0.0, 0.0).into(),
             material: Material::Lambertian {
@@ -85,6 +88,7 @@ fn main() {
     );
     objects.push(
         Plane {
+            // BOTTOM
             center: (0.0, -2.0, 0.0).into(),
             normal: (0.0, 1.0, 0.0).into(),
             material: Material::Lambertian {
@@ -95,15 +99,20 @@ fn main() {
     );
     objects.push(
         Plane {
+            // TOP
             center: (0.0, 4.0, 0.0).into(),
             normal: (0.0, -1.0, 0.0).into(),
             material: Material::Lambertian {
                 color: WHITE.into(),
             },
+            // material: Material::DiffuseLight {
+            //     color: WHITE.into(),
+            // },
         }
         .into(),
     );
     objects.push(
+        // FRONT
         Plane {
             center: (0.0, 0.0, -7.0).into(),
             normal: (0.0, 0.0, 1.0).into(),
@@ -114,6 +123,7 @@ fn main() {
         .into(),
     );
     objects.push(
+        // BACK
         Plane {
             center: (0.0, 0.0, 0.0).into(),
             normal: (0.0, 0.0, -1.0).into(),
@@ -144,11 +154,11 @@ fn main() {
         .into(),
     );
     let camera = Camera {
-        width: 800,
-        height: 600,
+        width: 500,
+        height: 500,
         fov: 90.0,
-        bounces: 20,
-        samples: 50,
+        bounces: 200,
+        samples: 20,
     };
     let img = camera.render(objects);
     img.save("output.png").expect("Failed to save image.");

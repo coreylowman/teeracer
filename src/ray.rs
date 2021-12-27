@@ -41,9 +41,9 @@ impl Into<Vec3<f64>> for Color {
 impl Into<Color> for Vec3<f64> {
     fn into(self) -> Color {
         (
-            (self[0].clamp(0.0, 1.0) * 255.0) as u8,
-            (self[1].clamp(0.0, 1.0) * 255.0) as u8,
-            (self[2].clamp(0.0, 1.0) * 255.0) as u8,
+            (self[0].clamp(0.0, 1.0) * 255.0).round() as u8,
+            (self[1].clamp(0.0, 1.0) * 255.0).round() as u8,
+            (self[2].clamp(0.0, 1.0) * 255.0).round() as u8,
         )
             .into()
     }
@@ -93,12 +93,10 @@ impl Hit {
     pub(crate) fn attenuate(&self, light: &mut Vec3<f64>) {
         match self.material {
             Material::Lambertian { color } => {
-                let color: Vec3<f64> = color.into();
-                *light = *light * color;
+                *light *= color.into();
             }
             Material::Metal { color, fuzz: _ } => {
-                let color: Vec3<f64> = color.into();
-                *light = *light * color;
+                *light *= color.into();
             }
             Material::Dielectric {
                 index_of_refraction: _,
