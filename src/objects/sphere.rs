@@ -9,10 +9,10 @@ pub(crate) struct Sphere {
 
 impl CanHit for Sphere {
     fn hit_by(&self, ray: Ray) -> Option<Hit> {
-        let oc = ray.origin - self.center;
+        let center_to_origin = ray.origin - self.center;
         let a = ray.direction.length_squared();
-        let half_b = oc.dot(&ray.direction);
-        let c = oc.length_squared() - self.radius.powi(2);
+        let half_b = center_to_origin.dot(&ray.direction);
+        let c = center_to_origin.length_squared() - self.radius.powi(2);
 
         let discriminant = half_b.powi(2) - a * c;
         if discriminant < 0.0 {
@@ -20,21 +20,17 @@ impl CanHit for Sphere {
         }
         let sqrtd = discriminant.sqrt();
 
-        let mut distance = (-half_b - sqrtd) / a;
-        if distance < 1e-3 {
-            distance = (-half_b + sqrtd) / a;
-            if distance < 1e-3 {
-                return None;
+        let near_root = Some((-half_b - sqrtd) / a).filter(|&v| v >= 1e-3);
+        let far_root = Some((-half_b + sqrtd) / a).filter(|&v| v >= 1e-3);
+        near_root.or(far_root).map(|distance| {
+            let position = ray.origin + ray.direction * distance;
+            let normal = (position - self.center).normalized();
+            Hit {
+                position,
+                distance,
+                normal,
+                material: self.material,
             }
-        }
-
-        let position = ray.origin + ray.direction * distance;
-        let normal = (position - self.center).normalized();
-        Some(Hit {
-            position,
-            distance,
-            normal,
-            material: self.material,
         })
     }
 }

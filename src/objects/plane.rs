@@ -10,17 +10,17 @@ pub(crate) struct Plane {
 impl CanHit for Plane {
     fn hit_by(&self, ray: Ray) -> Option<Hit> {
         let denom = self.normal.dot(&ray.direction);
-        let v = self.center - ray.origin;
-        let distance = v.dot(&self.normal) / denom;
-        if distance < 1e-3 || !distance.is_finite() {
-            return None;
-        }
-        let position = ray.origin + ray.direction * distance;
-        Some(Hit {
-            position,
-            distance,
-            normal: self.normal,
-            material: self.material,
-        })
+        let origin_to_center = self.center - ray.origin;
+        Some(origin_to_center.dot(&self.normal) / denom)
+            .filter(|&v| v.is_finite() && v >= 1e-3)
+            .map(|distance| {
+                let position = ray.origin + ray.direction * distance;
+                Hit {
+                    position,
+                    distance,
+                    normal: self.normal,
+                    material: self.material,
+                }
+            })
     }
 }
