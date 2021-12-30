@@ -1,6 +1,5 @@
-use rand::prelude::{thread_rng, Rng};
-
 use crate::linalg::{Length, Vec3};
+use rand::prelude::{thread_rng, Rng};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Ray {
@@ -162,14 +161,13 @@ impl Hit {
                 let cos_theta = cos_theta.abs();
                 let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
 
-                // let r0 = (1.0 - ratio) / (1.0 + ratio);
-                // let r1 = r0 * r0;
-                // let reflectance = r1 + (1.0 - r1) * (1.0 - cos_theta).powi(5);
-                // assert!(reflectance < 1.0 && reflectance > 0.0, "reflectance={}", reflectance);
+                // shclik approximation
+                let r0 = (1.0 - ratio) / (1.0 + ratio);
+                let r1 = r0 * r0;
+                let reflectance = r1 + (1.0 - r1) * (1.0 - cos_theta).powi(5);
 
-                // let mut rng = thread_rng();
-                let direction = if ratio * sin_theta > 1.0
-                // || reflectance > rng.gen_range(0.0..1.0))
+                let mut rng = thread_rng();
+                let direction = if ratio * sin_theta > 1.0 || reflectance > rng.gen_range(0.0..1.0)
                 {
                     ray.direction.reflect(&outward_normal).normalized()
                 } else {

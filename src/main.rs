@@ -2,15 +2,15 @@ mod camera;
 mod linalg;
 mod objects;
 mod ray;
+mod trace;
 
 use crate::camera::Camera;
-use crate::linalg::Vec3;
 use crate::objects::{Object, Plane, Sphere};
 use crate::ray::Material;
 
-const RED: (u8, u8, u8) = (255, 0, 0);
-const GREEN: (u8, u8, u8) = (0, 255, 0);
-const BLUE: (u8, u8, u8) = (0, 0, 255);
+const RED: (u8, u8, u8) = (255, 102, 102);
+const GREEN: (u8, u8, u8) = (102, 255, 102);
+const BLUE: (u8, u8, u8) = (102, 102, 255);
 const WHITE: (u8, u8, u8) = (255, 255, 255);
 
 mod refraction {
@@ -172,7 +172,7 @@ fn main() {
         height: 500,
         fov: 90.0,
         bounces: 20,
-        samples: 100,
+        samples: 10,
     };
     let img = camera.render(objects);
     img.save("output.png").expect("Failed to save image.");
