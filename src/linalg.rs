@@ -63,6 +63,17 @@ where
     }
 }
 
+impl<T> MulAssign<T> for Vec3<T>
+where
+    T: MulAssign + Copy,
+{
+    fn mul_assign(&mut self, rhs: T) {
+        for i in 0..3 {
+            self[i] *= rhs;
+        }
+    }
+}
+
 impl<T> Mul<Vec3<T>> for Vec3<T>
 where
     T: Mul<Output = T> + Copy,
@@ -71,6 +82,17 @@ where
     fn mul(self, rhs: Vec3<T>) -> Self::Output {
         Self {
             data: [self[0] * rhs[0], self[1] * rhs[1], self[2] * rhs[2]],
+        }
+    }
+}
+
+impl<T> MulAssign for Vec3<T>
+where
+    T: MulAssign + Copy,
+{
+    fn mul_assign(&mut self, rhs: Self) {
+        for i in 0..3 {
+            self[i] *= rhs[i];
         }
     }
 }
@@ -118,17 +140,6 @@ where
     fn add_assign(&mut self, rhs: Self) {
         for i in 0..3 {
             self[i] += rhs[i];
-        }
-    }
-}
-
-impl<T> MulAssign for Vec3<T>
-where
-    T: MulAssign + Copy,
-{
-    fn mul_assign(&mut self, rhs: Self) {
-        for i in 0..3 {
-            self[i] *= rhs[i];
         }
     }
 }

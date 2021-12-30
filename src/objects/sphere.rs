@@ -1,4 +1,4 @@
-use crate::linalg::Vec3;
+use crate::linalg::{Length, Vec3};
 use crate::ray::{CanHit, Hit, Material, Ray};
 
 pub(crate) struct Sphere {
@@ -9,24 +9,23 @@ pub(crate) struct Sphere {
 
 impl CanHit for Sphere {
     fn hit_by(&self, ray: Ray) -> Option<Hit> {
-        let l = self.center - ray.origin;
-        let adj = l.dot(&ray.direction);
-        let d2 = l.dot(&l) - adj * adj;
-        let radius2 = self.radius * self.radius;
-        if d2 > radius2 {
+        let oc = ray.origin - self.center;
+        let a = ray.direction.length_squared();
+        let half_b = oc.dot(&ray.direction);
+        let c = oc.length_squared() - self.radius.powi(2);
+
+        let discriminant = half_b.powi(2) - a * c;
+        if discriminant < 0.0 {
             return None;
         }
-        let thc = (radius2 - d2).sqrt();
-        let t0 = adj - thc;
-        let t1 = adj + thc;
+        let sqrtd = discriminant.sqrt();
 
-        if t0 < 1e-3 && t1 < 1e-3 {
-            return None;
-        }
-
-        let distance = t0.min(t1);
-        if distance.is_infinite() {
-            return None;
+        let mut distance = (-half_b - sqrtd) / a;
+        if distance < 1e-3 {
+            distance = (-half_b + sqrtd) / a;
+            if distance < 1e-3 {
+                return None;
+            }
         }
 
         let position = ray.origin + ray.direction * distance;

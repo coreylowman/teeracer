@@ -8,9 +8,9 @@ use crate::linalg::Vec3;
 use crate::objects::{Object, Plane, Sphere};
 use crate::ray::Material;
 
-const RED: (u8, u8, u8) = (255, 102, 102);
-const GREEN: (u8, u8, u8) = (102, 255, 102);
-const BLUE: (u8, u8, u8) = (102, 102, 255);
+const RED: (u8, u8, u8) = (255, 0, 0);
+const GREEN: (u8, u8, u8) = (0, 255, 0);
+const BLUE: (u8, u8, u8) = (0, 0, 255);
 const WHITE: (u8, u8, u8) = (255, 255, 255);
 
 mod refraction {
@@ -53,13 +53,30 @@ fn main() {
     );
     objects.push(
         Sphere {
-            center: (0.0, -0.5, -2.5).into(),
+            center: (-1.0, 0.0, -2.5).into(),
             radius: 0.5,
-            // material: Material::Dielectric {
-            //     index_of_refraction: 1.5,
-            // },
-            material: Material::Lambertian {
-                color: WHITE.into(),
+            material: Material::Dielectric {
+                index_of_refraction: refraction::CROWN_GLASS,
+            },
+        }
+        .into(),
+    );
+    objects.push(
+        Sphere {
+            center: (0.0, 0.0, -2.5).into(),
+            radius: 0.5,
+            material: Material::Dielectric {
+                index_of_refraction: refraction::CROWN_GLASS,
+            },
+        }
+        .into(),
+    );
+    objects.push(
+        Sphere {
+            center: (1.0, 0.0, -2.5).into(),
+            radius: -0.5,
+            material: Material::Dielectric {
+                index_of_refraction: refraction::CROWN_GLASS,
             },
         }
         .into(),
@@ -105,9 +122,6 @@ fn main() {
             material: Material::Lambertian {
                 color: WHITE.into(),
             },
-            // material: Material::DiffuseLight {
-            //     color: WHITE.into(),
-            // },
         }
         .into(),
     );
@@ -157,8 +171,8 @@ fn main() {
         width: 500,
         height: 500,
         fov: 90.0,
-        bounces: 200,
-        samples: 20,
+        bounces: 20,
+        samples: 100,
     };
     let img = camera.render(objects);
     img.save("output.png").expect("Failed to save image.");

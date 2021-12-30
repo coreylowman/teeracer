@@ -1,6 +1,6 @@
 use crate::linalg::Vec3;
 use crate::objects::Object;
-use crate::ray::{CanHit, Ray};
+use crate::ray::{CanHit, Material, Ray};
 use image::{DynamicImage, GenericImage, Pixel, Rgba};
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::{thread_rng, Rng};
@@ -36,10 +36,13 @@ impl Camera {
             ProgressStyle::default_bar().template("{bar:40} {elapsed_precise}<{eta} {per_sec}"),
         );
         let mut hits = Vec::with_capacity(self.bounces);
+        let mut path = Vec::with_capacity(self.bounces);
         for x in 0..self.width {
             for y in 0..self.height {
                 let mut avg_color: Vec3<f64> = (0.0, 0.0, 0.0).into();
                 for _ in 0..self.samples {
+                    assert!(hits.len() == 0);
+                    assert!(path.len() == 0);
                     let mut ray = self.ray_through(x, y);
                     while hits.len() < self.bounces {
                         let opt_hit = objects
@@ -50,16 +53,28 @@ impl Camera {
                             .flatten();
                         hits.push(opt_hit);
                         match opt_hit.map(|hit| hit.scatter(ray)).flatten() {
-                            Some(scattered_ray) => ray = scattered_ray,
-                            None => break,
+                            Some(scattered_ray) => {
+                                path.push((ray.direction, Some(scattered_ray.direction)));
+                                ray = scattered_ray;
+                            }
+                            None => {
+                                path.push((ray.direction, None));
+                                break;
+                            }
                         };
                     }
 
                     let mut color: Vec3<f64> = (0.0, 0.0, 0.0).into();
                     while let Some(opt_hit) = hits.pop() {
                         match opt_hit {
-                            Some(hit) => hit.attenuate(&mut color),
-                            None => color.fill(0.0),
+                            Some(hit) => {
+                                let (in_dir, out_dir) = path.pop().unwrap();
+                                hit.attenuate(&mut color, in_dir, out_dir)
+                            }
+                            None => {
+                                path.pop();
+                                color.fill(0.0)
+                            }
                         }
                     }
                     avg_color += color;

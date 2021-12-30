@@ -12,7 +12,7 @@ impl CanHit for Plane {
         let denom = self.normal.dot(&ray.direction);
         let v = self.center - ray.origin;
         let distance = v.dot(&self.normal) / denom;
-        if distance < 1e-3 || distance.is_infinite() {
+        if distance < 1e-3 || !distance.is_finite() {
             return None;
         }
         let position = ray.origin + ray.direction * distance;
