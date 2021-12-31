@@ -1,9 +1,9 @@
-use crate::linalg::Vec3;
+use crate::linalg::Three;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Ray {
-    pub(crate) origin: Vec3,
-    pub(crate) direction: Vec3,
+    pub(crate) origin: Three<f64>,
+    pub(crate) direction: Three<f64>,
 }
 
 impl Default for Ray {
@@ -17,9 +17,9 @@ impl Default for Ray {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Hit {
-    pub(crate) position: Vec3,
+    pub(crate) position: Three<f64>,
     pub(crate) distance: f64,
-    pub(crate) normal: Vec3,
+    pub(crate) normal: Three<f64>,
     pub(crate) material: Material,
 }
 
@@ -68,10 +68,10 @@ pub(crate) enum Interaction {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum Material {
-    Lambertian { rgb: Vec3<f64> },
-    Metal { rgb: Vec3<f64>, fuzz: f64 },
+    Lambertian { rgb: Three<f64> },
+    Metal { rgb: Three<f64>, fuzz: f64 },
     Dielectric(Refractor),
-    DiffuseLight { rgb: Vec3<f64> },
+    DiffuseLight { rgb: Three<f64> },
 }
 
 #[allow(dead_code)]

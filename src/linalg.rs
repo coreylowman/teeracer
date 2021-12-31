@@ -1,36 +1,40 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
 #[derive(Clone, Copy, Debug)]
-pub struct Vec3<T = f64> {
+pub struct Three<T> {
     data: [T; 3],
 }
 
-impl<T> Vec3<T> {
+impl<T> Three<T> {
     pub const fn new(x: T, y: T, z: T) -> Self {
         Self { data: [x, y, z] }
     }
 }
 
-impl<T> From<T> for Vec3<T>
+impl<T> From<T> for Three<T>
 where
     T: Copy,
 {
-    fn from(value: T) -> Self {
+    fn from(t: T) -> Self {
+        Self { data: [t, t, t] }
+    }
+}
+
+impl<T> From<(T, T, T)> for Three<T> {
+    fn from(ts: (T, T, T)) -> Self {
         Self {
-            data: [value, value, value],
+            data: [ts.0, ts.1, ts.2],
         }
     }
 }
 
-impl<T> From<(T, T, T)> for Vec3<T> {
-    fn from(t: (T, T, T)) -> Self {
-        Self {
-            data: [t.0, t.1, t.2],
-        }
+impl<T> From<[T; 3]> for Three<T> {
+    fn from(ts: [T; 3]) -> Self {
+        Self { data: ts }
     }
 }
 
-impl<T> Default for Vec3<T>
+impl<T> Default for Three<T>
 where
     T: Default,
 {
@@ -41,20 +45,20 @@ where
     }
 }
 
-impl<T> Index<usize> for Vec3<T> {
+impl<T> Index<usize> for Three<T> {
     type Output = T;
     fn index(&self, index: usize) -> &Self::Output {
         &self.data[index]
     }
 }
 
-impl<T> IndexMut<usize> for Vec3<T> {
+impl<T> IndexMut<usize> for Three<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.data[index]
     }
 }
 
-impl<T> Mul<T> for Vec3<T>
+impl<T> Mul<T> for Three<T>
 where
     T: Mul<Output = T> + Copy,
 {
@@ -66,7 +70,7 @@ where
     }
 }
 
-impl<T> MulAssign<T> for Vec3<T>
+impl<T> MulAssign<T> for Three<T>
 where
     T: MulAssign + Copy,
 {
@@ -77,19 +81,19 @@ where
     }
 }
 
-impl<T> Mul<Vec3<T>> for Vec3<T>
+impl<T> Mul<Three<T>> for Three<T>
 where
     T: Mul<Output = T> + Copy,
 {
     type Output = Self;
-    fn mul(self, rhs: Vec3<T>) -> Self::Output {
+    fn mul(self, rhs: Three<T>) -> Self::Output {
         Self {
             data: [self[0] * rhs[0], self[1] * rhs[1], self[2] * rhs[2]],
         }
     }
 }
 
-impl<T> MulAssign for Vec3<T>
+impl<T> MulAssign for Three<T>
 where
     T: MulAssign + Copy,
 {
@@ -100,7 +104,7 @@ where
     }
 }
 
-impl<T> Div<T> for Vec3<T>
+impl<T> Div<T> for Three<T>
 where
     T: Div<Output = T> + Copy,
 {
@@ -112,7 +116,7 @@ where
     }
 }
 
-impl<T> Neg for Vec3<T>
+impl<T> Neg for Three<T>
 where
     T: Neg<Output = T> + Copy,
 {
@@ -124,7 +128,7 @@ where
     }
 }
 
-impl<T> Add for Vec3<T>
+impl<T> Add for Three<T>
 where
     T: Add<Output = T> + Copy,
 {
@@ -136,7 +140,7 @@ where
     }
 }
 
-impl<T> AddAssign for Vec3<T>
+impl<T> AddAssign for Three<T>
 where
     T: AddAssign + Copy,
 {
@@ -147,7 +151,7 @@ where
     }
 }
 
-impl<T> DivAssign<T> for Vec3<T>
+impl<T> DivAssign<T> for Three<T>
 where
     T: DivAssign + Copy,
 {
@@ -158,19 +162,19 @@ where
     }
 }
 
-impl<T> Sub for Vec3<T>
+impl<T> Sub for Three<T>
 where
     T: Sub<Output = T> + Copy,
 {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
-        Vec3 {
+        Self {
             data: [self[0] - rhs[0], self[1] - rhs[1], self[2] - rhs[2]],
         }
     }
 }
 
-impl<T> Vec3<T>
+impl<T> Three<T>
 where
     T: Mul<Output = T> + Add<Output = T> + Copy,
 {
@@ -185,7 +189,7 @@ pub trait Length<T> {
     fn is_unit(&self) -> bool;
 }
 
-impl Length<f32> for Vec3<f32> {
+impl Length<f32> for Three<f32> {
     fn length_squared(&self) -> f32 {
         self.dot(&self)
     }
@@ -197,7 +201,7 @@ impl Length<f32> for Vec3<f32> {
     }
 }
 
-impl Length<f64> for Vec3<f64> {
+impl Length<f64> for Three<f64> {
     fn length_squared(&self) -> f64 {
         self.dot(&self)
     }
@@ -211,20 +215,9 @@ impl Length<f64> for Vec3<f64> {
     }
 }
 
-impl<T> Vec3<T>
+impl<T> Three<T>
 where
-    Vec3<T>: Length<T>,
-    T: Div<Output = T> + DivAssign + Copy,
-{
-    pub fn normalize(&mut self) {
-        let l = self.length();
-        *self /= l;
-    }
-}
-
-impl<T> Vec3<T>
-where
-    Vec3<T>: Length<T>,
+    Three<T>: Length<T>,
     T: Div<Output = T> + Copy,
 {
     pub fn normalized(&self) -> Self {
@@ -235,7 +228,7 @@ where
     }
 }
 
-impl<T> Vec3<T>
+impl<T> Three<T>
 where
     T: Copy,
 {

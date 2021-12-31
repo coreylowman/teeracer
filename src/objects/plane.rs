@@ -1,9 +1,9 @@
-use crate::linalg::Vec3;
+use crate::linalg::Three;
 use crate::ray::{CanHit, Hit, Material, Ray};
 
 pub(crate) struct Plane {
-    pub(crate) center: Vec3,
-    pub(crate) normal: Vec3,
+    pub(crate) center: Three<f64>,
+    pub(crate) normal: Three<f64>,
     pub(crate) material: Material,
 }
 

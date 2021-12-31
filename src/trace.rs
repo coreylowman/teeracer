@@ -1,8 +1,8 @@
-use crate::linalg::{Length, Vec3};
+use crate::linalg::{Length, Three};
 use crate::objects::Object;
 use crate::ray::{Absorb, Bounce, CanHit, Hit, Interaction, Material, Ray};
-use rand::prelude::{Distribution, Rng};
-use rand_distr::StandardNormal;
+use rand::prelude::Rng;
+use rand_distr::{Distribution, UnitSphere};
 
 pub(crate) struct LightDynamics {
     objects: Vec<Object>,
@@ -19,7 +19,7 @@ impl LightDynamics {
         }
     }
 
-    pub(crate) fn trace<R: Rng>(&mut self, root_ray: Ray, rng: &mut R) -> Vec3<f64> {
+    pub(crate) fn trace<R: Rng>(&mut self, root_ray: Ray, rng: &mut R) -> Three<f64> {
         assert!(self.interactions.len() == 0);
         let mut opt_ray = Some(root_ray);
         while let Some(ray) = opt_ray {
@@ -53,7 +53,7 @@ impl LightDynamics {
             }
         }
 
-        let mut color: Vec3<f64> = (0.0, 0.0, 0.0).into();
+        let mut color: Three<f64> = (0.0, 0.0, 0.0).into();
         while let Some(interaction) = self.interactions.pop() {
             match interaction {
                 Some(Interaction::Bounced(bounce)) => color *= bounce.albedo(),
@@ -66,33 +66,33 @@ impl LightDynamics {
 }
 
 impl Bounce {
-    pub(crate) fn albedo(&self) -> Vec3<f64> {
+    pub(crate) fn albedo(&self) -> Three<f64> {
         match self.hit.material {
             Material::Lambertian { rgb } => {
-                // let cos_theta = self.outgoing.direction.dot(&self.hit.normal).max(0.0);
-                rgb
+                let cos_theta = self.outgoing.direction.dot(&self.hit.normal).max(0.0);
+                rgb * cos_theta
             }
             Material::Metal { rgb, fuzz: _ } => rgb,
-            _ => Vec3::new(1.0, 1.0, 1.0),
+            _ => Three::new(1.0, 1.0, 1.0),
         }
     }
 }
 
 impl Absorb {
-    pub(crate) fn emit(&self) -> Vec3<f64> {
+    pub(crate) fn emit(&self) -> Three<f64> {
         match self.hit.material {
             Material::DiffuseLight { rgb } => rgb,
-            _ => Vec3::new(0.0, 0.0, 0.0),
+            _ => Three::new(0.0, 0.0, 0.0),
         }
     }
 }
 
 impl Hit {
-    pub(crate) fn scatter<R: Rng>(&self, ray: Ray, rng: &mut R) -> Option<Vec3<f64>> {
+    pub(crate) fn scatter<R: Rng>(&self, ray: Ray, rng: &mut R) -> Option<Three<f64>> {
         match self.material {
             Material::Lambertian { rgb: _ } => {
                 let scattered = self.normal;
-                let mut noise = Vec3::random_unit(rng);
+                let mut noise = Three::random_unit(rng);
                 if noise.dot(&self.normal).is_sign_negative() {
                     noise = -noise;
                 }
@@ -101,7 +101,7 @@ impl Hit {
             }
             Material::Metal { rgb: _, fuzz } => {
                 let scattered = ray.direction.reflect(&self.normal);
-                let mut noise = Vec3::random_unit(rng);
+                let mut noise = Three::random_unit(rng);
                 if noise.dot(&self.normal).is_sign_negative() {
                     noise = -noise;
                 }
@@ -138,18 +138,12 @@ impl Hit {
     }
 }
 
-impl Vec3<f64> {
+impl Three<f64> {
     fn reflect(&self, normal: &Self) -> Self {
         *self - *normal * (self.dot(normal) * 2.0)
     }
 
     fn random_unit<R: Rng>(rng: &mut R) -> Self {
-        let mut v = Self::new(
-            StandardNormal.sample(rng),
-            StandardNormal.sample(rng),
-            StandardNormal.sample(rng),
-        );
-        v.normalize();
-        v
+        UnitSphere.sample(rng).into()
     }
 }

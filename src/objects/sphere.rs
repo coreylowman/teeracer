@@ -1,8 +1,8 @@
-use crate::linalg::{Length, Vec3};
+use crate::linalg::{Length, Three};
 use crate::ray::{CanHit, Hit, Material, Ray};
 
 pub(crate) struct Sphere {
-    pub(crate) center: Vec3,
+    pub(crate) center: Three<f64>,
     pub(crate) radius: f64,
     pub(crate) material: Material,
 }
