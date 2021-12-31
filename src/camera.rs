@@ -1,13 +1,15 @@
 use crate::linalg::Vec3;
 use crate::objects::Object;
-use crate::ray::{CanHit, Material, Ray};
+use crate::ray::Ray;
+use crate::trace::LightDynamics;
 use image::{DynamicImage, GenericImage, Pixel, Rgba};
 use indicatif::{ProgressBar, ProgressStyle};
-use rand::prelude::{thread_rng, Rng};
+use rand::prelude::Rng;
 
 struct ScreenCoord;
 struct WorldCoord;
 
+#[allow(dead_code)]
 struct Coord<State> {
     x: f64,
     y: f64,
@@ -15,6 +17,7 @@ struct Coord<State> {
 }
 
 pub(crate) struct Camera {
+    pub(crate) position: Vec3<f64>,
     pub(crate) fov: f64,
     pub(crate) width: u32,
     pub(crate) height: u32,
@@ -28,61 +31,48 @@ impl Into<Rgba<u8>> for Vec3<u8> {
     }
 }
 
+impl Into<Vec3<f64>> for Vec3<u8> {
+    fn into(self) -> Vec3<f64> {
+        (
+            self[0] as f64 / 255.0,
+            self[1] as f64 / 255.0,
+            self[2] as f64 / 255.0,
+        )
+            .into()
+    }
+}
+
+impl Into<Vec3<u8>> for Vec3<f64> {
+    fn into(self) -> Vec3<u8> {
+        (
+            (self[0].clamp(0.0, 1.0) * 255.0).round() as u8,
+            (self[1].clamp(0.0, 1.0) * 255.0).round() as u8,
+            (self[2].clamp(0.0, 1.0) * 255.0).round() as u8,
+        )
+            .into()
+    }
+}
+
 impl Camera {
-    pub fn render(&self, objects: Vec<Object>) -> DynamicImage {
+    pub fn render<R: Rng>(&self, objects: Vec<Object>, rng: &mut R) -> DynamicImage {
         let mut img = DynamicImage::new_rgb8(self.width, self.height);
         let progress = ProgressBar::new((self.width * self.height * self.samples as u32) as u64);
         progress.set_style(
             ProgressStyle::default_bar().template("{bar:40} {elapsed_precise}<{eta} {per_sec}"),
         );
-        let mut hits = Vec::with_capacity(self.bounces);
-        let mut path = Vec::with_capacity(self.bounces);
+        let mut tracer = LightDynamics::new(objects, self.bounces);
         for x in 0..self.width {
             for y in 0..self.height {
                 let mut avg_color: Vec3<f64> = (0.0, 0.0, 0.0).into();
                 for _ in 0..self.samples {
-                    assert!(hits.len() == 0);
-                    assert!(path.len() == 0);
-                    let mut ray = self.ray_through(x, y);
-                    while hits.len() < self.bounces {
-                        let opt_hit = objects
-                            .iter()
-                            .map(|obj| obj.hit_by(ray))
-                            .filter(|h| h.is_some())
-                            .min()
-                            .flatten();
-                        hits.push(opt_hit);
-                        match opt_hit.map(|hit| hit.scatter(ray)).flatten() {
-                            Some(scattered_ray) => {
-                                path.push((ray.direction, Some(scattered_ray.direction)));
-                                ray = scattered_ray;
-                            }
-                            None => {
-                                path.push((ray.direction, None));
-                                break;
-                            }
-                        };
-                    }
-
-                    let mut color: Vec3<f64> = (0.0, 0.0, 0.0).into();
-                    while let Some(opt_hit) = hits.pop() {
-                        match opt_hit {
-                            Some(hit) => {
-                                let (in_dir, out_dir) = path.pop().unwrap();
-                                hit.attenuate(&mut color, in_dir, out_dir)
-                            }
-                            None => {
-                                path.pop();
-                                color.fill(0.0)
-                            }
-                        }
-                    }
-                    avg_color += color;
+                    let jx = x as f64 + rng.gen_range(0.0..1.0);
+                    let jy = y as f64 + rng.gen_range(0.0..1.0);
+                    let ray = self.ray_through(jx, jy);
+                    avg_color += tracer.trace(ray, rng);
                     progress.inc(1);
                 }
                 avg_color = avg_color / self.samples as f64;
                 let color: Vec3<u8> = avg_color.into();
-                // println!("x={}, y={} c={:?} p={:?}", x, y, avg_color, color);
                 img.put_pixel(x, y, color.into());
             }
         }
@@ -91,25 +81,28 @@ impl Camera {
 }
 
 impl Camera {
-    fn ray_through(&self, x: u32, y: u32) -> Ray {
+    fn ray_through(&self, x: f64, y: f64) -> Ray {
         let coord = self.to_world(Coord {
-            x: x as f64,
-            y: y as f64,
+            x,
+            y,
             state: ScreenCoord,
         });
-        let direction: Vec3 = (coord.x, coord.y, -1.0).into();
-        Ray::at(direction.normalized())
+        let forward: Vec3 = (0.0, 0.0, -1.0).into();
+        let up: Vec3 = (0.0, 1.0, 0.0).into();
+        let right: Vec3 = (1.0, 0.0, 0.0).into();
+        let direction = (right * coord.x + up * coord.y + forward).normalized();
+        Ray {
+            origin: self.position,
+            direction,
+        }
     }
 
     fn to_world(&self, coord: Coord<ScreenCoord>) -> Coord<WorldCoord> {
         let fov_adjustment = (self.fov.to_radians() / 2.0).tan();
         let aspect_ratio = (self.width as f64) / (self.height as f64);
-        let mut rng = thread_rng();
-        let x: f64 = coord.x + rng.gen_range(0.0..1.0);
-        let y: f64 = coord.y + rng.gen_range(0.0..1.0);
         Coord {
-            x: (2.0 * (x / self.width as f64) - 1.0) * aspect_ratio * fov_adjustment,
-            y: (-(2.0 * (y / self.height as f64) - 1.0)) * fov_adjustment,
+            x: (2.0 * (coord.x / self.width as f64) - 1.0) * aspect_ratio * fov_adjustment,
+            y: (-(2.0 * (coord.y / self.height as f64) - 1.0)) * fov_adjustment,
             state: WorldCoord,
         }
     }

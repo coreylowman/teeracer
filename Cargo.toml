@@ -7,7 +7,8 @@ edition = "2021"
 
 [dependencies]
 image = "0.23.14"
-rand = "0.8.4"
+rand = {version = "0.8.4", features=["small_rng"] }
 rand_distr = "0.4.2"
 indicatif = "0.16.2"
 num-traits = "0.2.14"
+rand_xorshift = "0.3.0"

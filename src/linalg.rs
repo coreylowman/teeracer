@@ -1,11 +1,14 @@
-use num_traits::Float;
-use rand::{prelude::Distribution, thread_rng};
-use rand_distr::{Standard, StandardNormal};
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3<T = f64> {
     data: [T; 3],
+}
+
+impl<T> Vec3<T> {
+    pub const fn new(x: T, y: T, z: T) -> Self {
+        Self { data: [x, y, z] }
+    }
 }
 
 impl<T> From<T> for Vec3<T>
@@ -164,43 +167,6 @@ where
         Vec3 {
             data: [self[0] - rhs[0], self[1] - rhs[1], self[2] - rhs[2]],
         }
-    }
-}
-
-impl<T> Vec3<T>
-where
-    Standard: Distribution<T>,
-    StandardNormal: Distribution<T>,
-    Vec3<T>: Length<T>,
-    T: Float + DivAssign + Mul<Output = T> + MulAssign + Copy + Float,
-{
-    pub(crate) fn random_unit() -> Self {
-        let mut rng = thread_rng();
-        let mut v = Self {
-            data: [
-                StandardNormal.sample(&mut rng),
-                StandardNormal.sample(&mut rng),
-                StandardNormal.sample(&mut rng),
-            ],
-        };
-        v.normalize();
-        v
-    }
-
-    pub(crate) fn random_unit_in() -> Self {
-        let mut rng = thread_rng();
-        let mut v = Self {
-            data: [
-                StandardNormal.sample(&mut rng),
-                StandardNormal.sample(&mut rng),
-                StandardNormal.sample(&mut rng),
-            ],
-        };
-        let l = (Standard.sample(&mut rng).powi(3) * v.length()).recip();
-        for i in 0..3 {
-            v[i] *= l;
-        }
-        v
     }
 }
 

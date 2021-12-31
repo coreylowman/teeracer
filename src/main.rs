@@ -4,32 +4,27 @@ mod objects;
 mod ray;
 mod trace;
 
+use rand::SeedableRng;
+use rand_xorshift::XorShiftRng;
+
 use crate::camera::Camera;
+use crate::linalg::Vec3;
 use crate::objects::{Object, Plane, Sphere};
-use crate::ray::Material;
+use crate::ray::{Material, Refractor};
 
-const RED: (u8, u8, u8) = (255, 102, 102);
-const GREEN: (u8, u8, u8) = (102, 255, 102);
-const BLUE: (u8, u8, u8) = (102, 102, 255);
-const WHITE: (u8, u8, u8) = (255, 255, 255);
-
-mod refraction {
-    pub const VACUUM: f64 = 1.0;
-    pub const AIR: f64 = 1.00029;
-    pub const ICE: f64 = 1.31;
-    pub const WATER: f64 = 1.33;
-    pub const CROWN_GLASS: f64 = 1.52;
-    pub const DIAMOND: f64 = 2.417;
-}
+const RED: Vec3<u8> = Vec3::new(255, 102, 102);
+const GREEN: Vec3<u8> = Vec3::new(102, 255, 102);
+const BLUE: Vec3<u8> = Vec3::new(102, 102, 255);
+const WHITE: Vec3<u8> = Vec3::new(255, 255, 255);
 
 fn main() {
     let mut objects: Vec<Object> = Vec::new();
     objects.push(
         Sphere {
-            center: (-2.5, 0.5, -4.0).into(),
+            center: (-2.5, 0.5, -3.0).into(),
             radius: 1.0,
             material: Material::Metal {
-                color: GREEN.into(),
+                rgb: GREEN.into(),
                 fuzz: 0.0,
             },
         }
@@ -37,9 +32,9 @@ fn main() {
     );
     objects.push(
         Sphere {
-            center: (3.0, 2.0, -4.0).into(),
-            radius: 2.0,
-            material: Material::Lambertian { color: RED.into() },
+            center: (2.0, 0.5, -5.0).into(),
+            radius: 1.5,
+            material: Material::Lambertian { rgb: RED.into() },
         }
         .into(),
     );
@@ -47,59 +42,49 @@ fn main() {
         Sphere {
             center: (-2.0, 2.0, -6.0).into(),
             radius: 2.0,
-            material: Material::Lambertian { color: BLUE.into() },
+            material: Material::Lambertian { rgb: BLUE.into() },
         }
         .into(),
     );
     objects.push(
         Sphere {
-            center: (-1.0, 0.0, -2.5).into(),
+            center: (-1.0, -0.5, -2.5).into(),
             radius: 0.5,
-            material: Material::Dielectric {
-                index_of_refraction: refraction::CROWN_GLASS,
-            },
+            material: Material::Dielectric(Refractor::Water),
         }
         .into(),
     );
     objects.push(
         Sphere {
-            center: (0.0, 0.0, -2.5).into(),
+            center: (0.0, -0.5, -2.5).into(),
             radius: 0.5,
-            material: Material::Dielectric {
-                index_of_refraction: refraction::CROWN_GLASS,
-            },
+            material: Material::Dielectric(Refractor::CrownGlass),
         }
         .into(),
     );
     objects.push(
         Sphere {
-            center: (1.0, 0.0, -2.5).into(),
+            center: (1.0, -0.5, -2.5).into(),
             radius: -0.5,
-            material: Material::Dielectric {
-                index_of_refraction: refraction::CROWN_GLASS,
-            },
+            material: Material::Dielectric(Refractor::Diamond),
         }
         .into(),
     );
     objects.push(
         Plane {
             // LEFT
-            center: (-4.0, 0.0, 0.0).into(),
+            center: (-5.0, 0.0, 0.0).into(),
             normal: (1.0, 0.0, 0.0).into(),
-            material: Material::Lambertian {
-                color: WHITE.into(),
-            },
+            material: Material::Lambertian { rgb: WHITE.into() },
         }
         .into(),
     );
     objects.push(
         Plane {
             // RIGHT
-            center: (4.0, 0.0, 0.0).into(),
+            center: (5.0, 0.0, 0.0).into(),
             normal: (-1.0, 0.0, 0.0).into(),
-            material: Material::Lambertian {
-                color: WHITE.into(),
-            },
+            material: Material::Lambertian { rgb: WHITE.into() },
         }
         .into(),
     );
@@ -108,9 +93,7 @@ fn main() {
             // BOTTOM
             center: (0.0, -2.0, 0.0).into(),
             normal: (0.0, 1.0, 0.0).into(),
-            material: Material::Lambertian {
-                color: WHITE.into(),
-            },
+            material: Material::Lambertian { rgb: WHITE.into() },
         }
         .into(),
     );
@@ -119,9 +102,7 @@ fn main() {
             // TOP
             center: (0.0, 4.0, 0.0).into(),
             normal: (0.0, -1.0, 0.0).into(),
-            material: Material::Lambertian {
-                color: WHITE.into(),
-            },
+            material: Material::Lambertian { rgb: WHITE.into() },
         }
         .into(),
     );
@@ -130,50 +111,36 @@ fn main() {
         Plane {
             center: (0.0, 0.0, -7.0).into(),
             normal: (0.0, 0.0, 1.0).into(),
-            material: Material::Lambertian {
-                color: WHITE.into(),
-            },
+            material: Material::Lambertian { rgb: WHITE.into() },
         }
         .into(),
     );
     objects.push(
         // BACK
         Plane {
-            center: (0.0, 0.0, 0.0).into(),
+            center: (0.0, 0.0, 2.0).into(),
             normal: (0.0, 0.0, -1.0).into(),
-            material: Material::Lambertian {
-                color: WHITE.into(),
-            },
+            material: Material::Lambertian { rgb: WHITE.into() },
         }
         .into(),
     );
     objects.push(
         Sphere {
-            center: (0.0, 1.0, -3.0).into(),
-            radius: 0.75,
-            material: Material::DiffuseLight {
-                color: WHITE.into(),
-            },
+            center: (0.0, 3.0, -3.0).into(),
+            radius: 1.0,
+            material: Material::DiffuseLight { rgb: WHITE.into() },
         }
         .into(),
     );
-    objects.push(
-        Sphere {
-            center: (0.0, 10.0, -3.0).into(),
-            radius: 0.75,
-            material: Material::DiffuseLight {
-                color: WHITE.into(),
-            },
-        }
-        .into(),
-    );
+    let mut rng = XorShiftRng::seed_from_u64(0);
     let camera = Camera {
-        width: 500,
-        height: 500,
+        position: (0.0, 0.0, 0.5).into(),
+        width: 800,
+        height: 600,
         fov: 90.0,
-        bounces: 20,
-        samples: 10,
+        bounces: 25,
+        samples: 100,
     };
-    let img = camera.render(objects);
+    let img = camera.render(objects, &mut rng);
     img.save("output.png").expect("Failed to save image.");
 }
