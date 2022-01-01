@@ -2,10 +2,10 @@ mod plane;
 mod sphere;
 
 use crate::ray::{CanHit, Hit, Ray};
-pub(crate) use plane::Plane;
-pub(crate) use sphere::Sphere;
+pub use plane::Plane;
+pub use sphere::Sphere;
 
-pub(crate) enum Object {
+pub enum Object {
     Plane(Plane),
     Sphere(Sphere),
 }

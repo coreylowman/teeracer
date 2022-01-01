@@ -1,9 +1,10 @@
 use crate::linalg::Three;
+use crate::scene::ObjectIdx;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Ray {
-    pub(crate) origin: Three<f64>,
-    pub(crate) direction: Three<f64>,
+pub struct Ray {
+    pub origin: Three<f64>,
+    pub direction: Three<f64>,
 }
 
 impl Default for Ray {
@@ -16,11 +17,10 @@ impl Default for Ray {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Hit {
-    pub(crate) position: Three<f64>,
-    pub(crate) distance: f64,
-    pub(crate) normal: Three<f64>,
-    pub(crate) material: Material,
+pub struct Hit {
+    pub position: Three<f64>,
+    pub distance: f64,
+    pub normal: Three<f64>,
 }
 
 impl PartialEq for Hit {
@@ -43,57 +43,27 @@ impl Ord for Hit {
     }
 }
 
-pub(crate) trait CanHit {
+pub trait CanHit {
     fn hit_by(&self, ray: Ray) -> Option<Hit>;
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Bounce {
-    pub(crate) incoming: Ray,
-    pub(crate) hit: Hit,
-    pub(crate) outgoing: Ray,
+pub struct Bounce {
+    pub incoming: Ray,
+    pub hit: Hit,
+    pub obj_idx: ObjectIdx,
+    pub outgoing: Ray,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Absorb {
-    pub(crate) incoming: Ray,
-    pub(crate) hit: Hit,
+pub struct Absorb {
+    pub incoming: Ray,
+    pub hit: Hit,
+    pub obj_idx: ObjectIdx,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum Interaction {
+pub enum Interaction {
     Bounced(Bounce),
     Absorbed(Absorb),
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum Material {
-    Lambertian { rgb: Three<f64> },
-    Metal { rgb: Three<f64>, fuzz: f64 },
-    Dielectric(Refractor),
-    DiffuseLight { rgb: Three<f64> },
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum Refractor {
-    Vacuum,
-    Air,
-    Ice,
-    Water,
-    CrownGlass,
-    Diamond,
-}
-
-impl Refractor {
-    pub(crate) const fn index(self) -> f64 {
-        match self {
-            Self::Vacuum => 1.0,
-            Self::Air => 1.00029,
-            Self::Ice => 1.31,
-            Self::Water => 1.33,
-            Self::CrownGlass => 1.52,
-            Self::Diamond => 2.417,
-        }
-    }
 }

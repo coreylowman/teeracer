@@ -1,10 +1,18 @@
 use crate::linalg::{Length, Three};
-use crate::ray::{CanHit, Hit, Material, Ray};
+use crate::ray::{CanHit, Hit, Ray};
 
-pub(crate) struct Sphere {
-    pub(crate) center: Three<f64>,
-    pub(crate) radius: f64,
-    pub(crate) material: Material,
+pub struct Sphere {
+    center: Three<f64>,
+    radius: f64,
+}
+
+impl Sphere {
+    pub fn new<I: Into<Three<f64>>>(into_center: I, radius: f64) -> Self {
+        Self {
+            center: into_center.into(),
+            radius,
+        }
+    }
 }
 
 impl CanHit for Sphere {
@@ -29,7 +37,6 @@ impl CanHit for Sphere {
                 position,
                 distance,
                 normal,
-                material: self.material,
             }
         })
     }

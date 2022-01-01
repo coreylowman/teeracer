@@ -1,45 +1,55 @@
 use crate::linalg::{Length, Three};
-use crate::objects::Object;
-use crate::ray::{Absorb, Bounce, CanHit, Hit, Interaction, Material, Ray};
+use crate::material::Material;
+use crate::ray::{Absorb, Bounce, CanHit, Hit, Interaction, Ray};
+use crate::scene::{ObjectIdx, Scene};
 use rand::prelude::Rng;
 use rand_distr::{Distribution, UnitSphere};
 
-pub(crate) struct LightDynamics {
-    objects: Vec<Object>,
+pub struct PathTracer {
+    scene: Scene,
     interactions: Vec<Option<Interaction>>,
-    num_bounces: usize,
+    depth: usize,
 }
 
-impl LightDynamics {
-    pub(crate) fn new(objects: Vec<Object>, num_bounces: usize) -> Self {
+impl PathTracer {
+    pub fn new(scene: Scene, depth: usize) -> Self {
         Self {
-            objects,
-            interactions: Vec::with_capacity(num_bounces),
-            num_bounces,
+            scene,
+            interactions: Vec::with_capacity(depth),
+            depth,
         }
     }
 
-    pub(crate) fn trace<R: Rng>(&mut self, root_ray: Ray, rng: &mut R) -> Three<f64> {
+    pub fn trace<R: Rng>(&mut self, root_ray: Ray, rng: &mut R) -> Three<f64> {
         assert!(self.interactions.len() == 0);
         let mut opt_ray = Some(root_ray);
         while let Some(ray) = opt_ray {
             let opt_bounce = self
-                .objects
+                .scene
+                .objects()
                 .iter()
-                .map(|obj| obj.hit_by(ray))
+                .enumerate()
+                .map(|(i, obj)| obj.hit_by(ray).map(|h| (h, ObjectIdx(i))))
                 .filter(|h| h.is_some())
                 .min()
                 .flatten()
-                .map(|hit| match hit.scatter(ray, rng) {
-                    Some(direction) => Interaction::Bounced(Bounce {
-                        incoming: ray,
-                        hit,
-                        outgoing: Ray {
-                            origin: hit.position,
-                            direction,
-                        },
-                    }),
-                    None => Interaction::Absorbed(Absorb { incoming: ray, hit }),
+                .map(|(hit, obj_idx)| {
+                    match hit.scatter(ray, self.scene.material_for(obj_idx), rng) {
+                        Some(direction) => Interaction::Bounced(Bounce {
+                            incoming: ray,
+                            hit,
+                            obj_idx,
+                            outgoing: Ray {
+                                origin: hit.position,
+                                direction,
+                            },
+                        }),
+                        None => Interaction::Absorbed(Absorb {
+                            incoming: ray,
+                            hit,
+                            obj_idx,
+                        }),
+                    }
                 });
             self.interactions.push(opt_bounce);
             opt_ray = opt_bounce
@@ -48,7 +58,7 @@ impl LightDynamics {
                     _ => None,
                 })
                 .flatten();
-            if self.interactions.len() >= self.num_bounces {
+            if self.interactions.len() >= self.depth {
                 break;
             }
         }
@@ -56,8 +66,12 @@ impl LightDynamics {
         let mut color: Three<f64> = (0.0, 0.0, 0.0).into();
         while let Some(interaction) = self.interactions.pop() {
             match interaction {
-                Some(Interaction::Bounced(bounce)) => color *= bounce.albedo(),
-                Some(Interaction::Absorbed(absorb)) => color = absorb.emit(),
+                Some(Interaction::Bounced(bounce)) => {
+                    color *= bounce.albedo(self.scene.material_for(bounce.obj_idx))
+                }
+                Some(Interaction::Absorbed(absorb)) => {
+                    color = absorb.emit(self.scene.material_for(absorb.obj_idx))
+                }
                 None => color.fill(0.0),
             }
         }
@@ -66,31 +80,36 @@ impl LightDynamics {
 }
 
 impl Bounce {
-    pub(crate) fn albedo(&self) -> Three<f64> {
-        match self.hit.material {
-            Material::Lambertian { rgb } => {
+    pub fn albedo(&self, material: &Material) -> Three<f64> {
+        match material {
+            &Material::Lambertian { rgb } => {
                 let cos_theta = self.outgoing.direction.dot(&self.hit.normal).max(0.0);
                 rgb * cos_theta
             }
-            Material::Metal { rgb, fuzz: _ } => rgb,
+            &Material::Metal { rgb, fuzz: _ } => rgb,
             _ => Three::new(1.0, 1.0, 1.0),
         }
     }
 }
 
 impl Absorb {
-    pub(crate) fn emit(&self) -> Three<f64> {
-        match self.hit.material {
-            Material::DiffuseLight { rgb } => rgb,
+    pub fn emit(&self, material: &Material) -> Three<f64> {
+        match material {
+            &Material::DiffuseLight { rgb } => rgb,
             _ => Three::new(0.0, 0.0, 0.0),
         }
     }
 }
 
 impl Hit {
-    pub(crate) fn scatter<R: Rng>(&self, ray: Ray, rng: &mut R) -> Option<Three<f64>> {
-        match self.material {
-            Material::Lambertian { rgb: _ } => {
+    pub fn scatter<R: Rng>(
+        &self,
+        ray: Ray,
+        material: &Material,
+        rng: &mut R,
+    ) -> Option<Three<f64>> {
+        match material {
+            &Material::Lambertian { rgb: _ } => {
                 let scattered = self.normal;
                 let mut noise = Three::random_unit(rng);
                 if noise.dot(&self.normal).is_sign_negative() {
@@ -99,7 +118,7 @@ impl Hit {
                 let direction = (scattered + noise).normalized();
                 Some(direction).filter(|d| d.dot(&self.normal) > 0.0)
             }
-            Material::Metal { rgb: _, fuzz } => {
+            &Material::Metal { rgb: _, fuzz } => {
                 let scattered = ray.direction.reflect(&self.normal);
                 let mut noise = Three::random_unit(rng);
                 if noise.dot(&self.normal).is_sign_negative() {
@@ -108,14 +127,14 @@ impl Hit {
                 let direction = (scattered + noise * fuzz).normalized();
                 Some(direction).filter(|d| d.dot(&self.normal) > 0.0)
             }
-            Material::Dielectric(refractor) => {
+            &Material::Dielectric(index_of_refraction) => {
                 let cos_theta = ray.direction.dot(&self.normal);
                 let exiting = cos_theta.is_sign_positive();
                 let outward_normal = if exiting { -self.normal } else { self.normal };
                 let ratio = if exiting {
-                    refractor.index()
+                    index_of_refraction.value()
                 } else {
-                    1.0 / refractor.index()
+                    1.0 / index_of_refraction.value()
                 };
                 let cos_theta = cos_theta.abs();
                 let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();

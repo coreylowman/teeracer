@@ -178,7 +178,7 @@ impl<T> Three<T>
 where
     T: Mul<Output = T> + Add<Output = T> + Copy,
 {
-    pub(crate) fn dot(&self, rhs: &Self) -> T {
+    pub fn dot(&self, rhs: &Self) -> T {
         self[0] * rhs[0] + self[1] * rhs[1] + self[2] * rhs[2]
     }
 }
@@ -232,7 +232,7 @@ impl<T> Three<T>
 where
     T: Copy,
 {
-    pub(crate) fn fill(&mut self, value: T) {
+    pub fn fill(&mut self, value: T) {
         for i in 0..3 {
             self[i] = value;
         }

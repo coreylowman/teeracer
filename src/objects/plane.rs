@@ -1,10 +1,18 @@
 use crate::linalg::Three;
-use crate::ray::{CanHit, Hit, Material, Ray};
+use crate::ray::{CanHit, Hit, Ray};
 
-pub(crate) struct Plane {
-    pub(crate) center: Three<f64>,
-    pub(crate) normal: Three<f64>,
-    pub(crate) material: Material,
+pub struct Plane {
+    center: Three<f64>,
+    normal: Three<f64>,
+}
+
+impl Plane {
+    pub fn new<I: Into<Three<f64>>>(into_center: I, into_normal: I) -> Self {
+        Self {
+            center: into_center.into(),
+            normal: into_normal.into(),
+        }
+    }
 }
 
 impl CanHit for Plane {
@@ -19,7 +27,6 @@ impl CanHit for Plane {
                     position,
                     distance,
                     normal: self.normal,
-                    material: self.material,
                 }
             })
     }
