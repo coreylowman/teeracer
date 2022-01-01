@@ -18,8 +18,8 @@ struct Coord<State> {
 pub struct Camera {
     pub position: Three<f64>,
     pub fov: f64,
-    pub width: u32,
-    pub height: u32,
+    pub width: usize,
+    pub height: usize,
     pub samples: usize,
 }
 
@@ -35,24 +35,36 @@ impl Into<Rgb<u8>> for Three<f64> {
 
 impl Camera {
     pub fn render<R: Rng>(&self, mut tracer: PathTracer, mut rng: R) -> RgbImage {
-        let mut img = RgbImage::new(self.width, self.height);
-        let progress = ProgressBar::new((self.width * self.height * self.samples as u32) as u64);
+        let progress = ProgressBar::new((self.width * self.height * self.samples) as u64);
         progress.set_style(
             ProgressStyle::default_bar().template("{bar:40} {elapsed_precise}<{eta} {per_sec}"),
         );
 
-        for x in 0..self.width {
+        let mut colors: Vec<Three<f64>> =
+            Vec::with_capacity(self.width as usize * self.height as usize);
+        for _ in 0..(self.width * self.height) {
+            colors.push((0.0, 0.0, 0.0).into());
+        }
+        for _ in 0..self.samples {
+            let mut i = 0;
             for y in 0..self.height {
-                let mut avg_color: Three<f64> = (0.0, 0.0, 0.0).into();
-                for _ in 0..self.samples {
+                for x in 0..self.width {
                     let jx = x as f64 + rng.gen_range(0.0..1.0);
                     let jy = y as f64 + rng.gen_range(0.0..1.0);
                     let ray = self.ray_through(jx, jy);
-                    avg_color += tracer.trace(ray, &mut rng);
+                    colors[i] += tracer.trace(ray, &mut rng);
                     progress.inc(1);
+                    i += 1;
                 }
-                avg_color = avg_color / self.samples as f64;
-                img.put_pixel(x, y, avg_color.into());
+            }
+        }
+
+        let mut img = RgbImage::new(self.width as u32, self.height as u32);
+        for x in 0..self.width {
+            for y in 0..self.height {
+                let total_color = colors[y * self.width + x];
+                let mean_color = total_color / self.samples as f64;
+                img.put_pixel(x as u32, y as u32, mean_color.into());
             }
         }
         img
