@@ -5,15 +5,9 @@ use image::{Rgb, RgbImage};
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::Rng;
 
-struct ScreenCoord;
-struct WorldCoord;
-
-#[allow(dead_code)]
-struct Coord<State> {
-    x: f64,
-    y: f64,
-    state: State,
-}
+const FORWARD: Three<f64> = Three::new(0.0, 0.0, -1.0);
+const UP: Three<f64> = Three::new(0.0, 1.0, 0.0);
+const RIGHT: Three<f64> = Three::new(1.0, 0.0, 0.0);
 
 pub struct Camera {
     pub position: Three<f64>,
@@ -40,11 +34,7 @@ impl Camera {
             ProgressStyle::default_bar().template("{bar:40} {elapsed_precise}<{eta} {per_sec}"),
         );
 
-        let mut colors: Vec<Three<f64>> =
-            Vec::with_capacity(self.width as usize * self.height as usize);
-        for _ in 0..(self.width * self.height) {
-            colors.push((0.0, 0.0, 0.0).into());
-        }
+        let mut colors: Vec<Three<f64>> = vec![(0.0, 0.0, 0.0).into(); self.width * self.height];
         for _ in 0..self.samples {
             let mut i = 0;
             for y in 0..self.height {
@@ -71,28 +61,14 @@ impl Camera {
     }
 
     fn ray_through(&self, x: f64, y: f64) -> Ray {
-        let coord = self.to_world(Coord {
-            x,
-            y,
-            state: ScreenCoord,
-        });
-        let forward: Three<f64> = (0.0, 0.0, -1.0).into();
-        let up: Three<f64> = (0.0, 1.0, 0.0).into();
-        let right: Three<f64> = (1.0, 0.0, 0.0).into();
-        let direction = (right * coord.x + up * coord.y + forward).normalized();
+        let fov_adjustment = (self.fov.to_radians() / 2.0).tan();
+        let aspect_ratio = (self.width as f64) / (self.height as f64);
+        let x = (2.0 * (x / self.width as f64) - 1.0) * aspect_ratio * fov_adjustment;
+        let y = (-(2.0 * (y / self.height as f64) - 1.0)) * fov_adjustment;
+        let direction = (RIGHT * x + UP * y + FORWARD).normalized();
         Ray {
             origin: self.position,
             direction,
-        }
-    }
-
-    fn to_world(&self, coord: Coord<ScreenCoord>) -> Coord<WorldCoord> {
-        let fov_adjustment = (self.fov.to_radians() / 2.0).tan();
-        let aspect_ratio = (self.width as f64) / (self.height as f64);
-        Coord {
-            x: (2.0 * (coord.x / self.width as f64) - 1.0) * aspect_ratio * fov_adjustment,
-            y: (-(2.0 * (coord.y / self.height as f64) - 1.0)) * fov_adjustment,
-            state: WorldCoord,
         }
     }
 }
