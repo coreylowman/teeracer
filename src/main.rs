@@ -12,7 +12,7 @@ use rand_xorshift::XorShiftRng;
 use crate::camera::Camera;
 use crate::linalg::Three;
 use crate::material::{IndexOfRefraction, Material};
-use crate::objects::{Plane, Sphere};
+use crate::objects::{Plane, Rectangle, Sphere};
 use crate::scene::Scene;
 use crate::tracer::PathTracer;
 
@@ -61,7 +61,7 @@ fn main() {
     scene.add_object(Plane::new((0.0, 4.0, 0.0), (0.0, -1.0, 0.0)), white_lam); // TOP
     scene.add_object(Plane::new((0.0, 0.0, -7.0), (0.0, 0.0, 1.0)), white_lam); // FRONT
     scene.add_object(Plane::new((0.0, 0.0, 2.0), (0.0, 0.0, -1.0)), white_lam); // BACK
-    scene.add_object(Sphere::new((0.0, 3.0, -3.0), 1.0), white_light);
+    scene.add_object(Sphere::new((0.0, 4.0, -3.0), 1.0), white_light);
 
     let tracer = PathTracer::new(scene, 25);
 
