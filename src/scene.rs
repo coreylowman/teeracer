@@ -1,4 +1,4 @@
-use crate::{material::Material, objects::Object};
+use crate::{material::Material, ray::CanHit};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MaterialIdx(usize);
@@ -7,7 +7,7 @@ pub struct MaterialIdx(usize);
 pub struct ObjectIdx(pub usize);
 
 pub struct Scene {
-    objects: Vec<Object>,
+    objects: Vec<Box<dyn CanHit>>,
     object_material_idx: Vec<MaterialIdx>,
     materials: Vec<Material>,
 }
@@ -27,9 +27,9 @@ impl Scene {
         idx
     }
 
-    pub fn add_object<O: Into<Object>>(&mut self, obj: O, mat_idx: MaterialIdx) -> ObjectIdx {
+    pub fn add_object<O: 'static + CanHit>(&mut self, obj: O, mat_idx: MaterialIdx) -> ObjectIdx {
         let obj_idx = ObjectIdx(self.objects.len());
-        self.objects.push(obj.into());
+        self.objects.push(Box::new(obj));
         self.object_material_idx.push(mat_idx);
         obj_idx
     }
@@ -39,7 +39,7 @@ impl Scene {
         &self.materials[mat_idx.0]
     }
 
-    pub fn objects(&self) -> &Vec<Object> {
+    pub fn objects(&self) -> &Vec<Box<dyn CanHit>> {
         &self.objects
     }
 }

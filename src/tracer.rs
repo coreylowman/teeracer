@@ -1,6 +1,6 @@
 use crate::linalg::{Length, Three};
 use crate::material::Material;
-use crate::ray::{Absorb, Bounce, CanHit, Hit, Interaction, Ray};
+use crate::ray::{Absorb, Bounce, Hit, Interaction, Ray};
 use crate::scene::{ObjectIdx, Scene};
 use rand::prelude::Rng;
 use rand_distr::{Distribution, UnitSphere};
