@@ -12,7 +12,7 @@ use rand_xorshift::XorShiftRng;
 use crate::camera::Camera;
 use crate::linalg::Three;
 use crate::material::{IndexOfRefraction, Material};
-use crate::objects::{Plane, Sphere};
+use crate::objects::{Plane, Sphere, Triangle};
 use crate::scene::Scene;
 use crate::tracer::PathTracer;
 
