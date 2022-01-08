@@ -5,7 +5,7 @@ pub enum Material {
     Lambertian { rgb: Three<f64> },
     Metal { rgb: Three<f64>, fuzz: f64 },
     Dielectric(IndexOfRefraction),
-    DiffuseLight { rgb: Three<f64> },
+    DiffuseLight { rgb: Three<f64>, power: f64 },
 }
 
 #[allow(dead_code)]

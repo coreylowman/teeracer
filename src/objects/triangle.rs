@@ -1,6 +1,7 @@
-use crate::linalg::Three;
+use crate::linalg::{Length, Three};
 use crate::ray::{CanHit, Hit, Ray};
 
+#[derive(Debug)]
 pub struct Triangle {
     v0: Three<f64>,
     v01: Three<f64>,
@@ -12,11 +13,19 @@ impl Triangle {
         let v0 = into_v0.into();
         let v1 = into_v1.into();
         let v2 = into_v2.into();
+        Self::from_points(v0, v1, v2)
+    }
+
+    pub fn from_points(v0: Three<f64>, v1: Three<f64>, v2: Three<f64>) -> Self {
         Self {
             v0,
             v01: v1 - v0,
             v02: v2 - v0,
         }
+    }
+
+    pub fn normal(&self) -> Three<f64> {
+        self.v01.cross(&self.v02).normalized()
     }
 }
 
@@ -48,21 +57,11 @@ impl CanHit for Triangle {
             return None;
         }
         let position = ray.origin + ray.direction * distance;
-        let normal = (self.v01.cross(&self.v02)).normalized();
+        let normal = self.normal();
         Some(Hit {
             position,
             distance,
             normal,
         })
-    }
-}
-
-impl Three<f64> {
-    fn cross(&self, other: &Self) -> Self {
-        Self::new(
-            self[1] * other[2] - self[2] * other[1],
-            self[2] * other[0] - self[0] * other[2],
-            self[0] * other[1] - self[1] * other[0],
-        )
     }
 }

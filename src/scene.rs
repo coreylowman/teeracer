@@ -1,4 +1,4 @@
-use crate::{material::Material, ray::CanHit};
+use crate::{linalg::Three, material::Material, ray::CanHit};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MaterialIdx(usize);

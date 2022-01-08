@@ -12,7 +12,7 @@ use rand_xorshift::XorShiftRng;
 use crate::camera::Camera;
 use crate::linalg::Three;
 use crate::material::{IndexOfRefraction, Material};
-use crate::objects::{Plane, Sphere, Triangle};
+use crate::objects::{Plane, Sphere};
 use crate::scene::Scene;
 use crate::tracer::PathTracer;
 
@@ -46,7 +46,21 @@ fn main() {
     let water = scene.add_material(Material::Dielectric(IndexOfRefraction::Water));
     let crown_glass = scene.add_material(Material::Dielectric(IndexOfRefraction::CrownGlass));
     let diamond = scene.add_material(Material::Dielectric(IndexOfRefraction::Diamond));
-    let white_light = scene.add_material(Material::DiffuseLight { rgb: WHITE.into() });
+    let white_light = scene.add_material(Material::DiffuseLight {
+        rgb: WHITE.into(),
+        power: 3.0,
+    });
+
+    // box
+    scene.add_object(Plane::new((-5.0, 0.0, 0.0), (1.0, 0.0, 0.0)), red_lam); // LEFT
+    scene.add_object(Plane::new((5.0, 0.0, 0.0), (-1.0, 0.0, 0.0)), blue_lam); // RIGHT
+    scene.add_object(Plane::new((0.0, -2.0, 0.0), (0.0, 1.0, 0.0)), white_lam); // BOTTOM
+    scene.add_object(Plane::new((0.0, 4.0, 0.0), (0.0, -1.0, 0.0)), white_lam); // TOP
+    scene.add_object(Plane::new((0.0, 0.0, -7.0), (0.0, 0.0, 1.0)), white_lam); // FRONT
+    scene.add_object(Plane::new((0.0, 0.0, 7.0), (0.0, 0.0, -1.0)), white_lam); // BACK
+
+    // lights
+    scene.add_object(Sphere::new((0.0, 3.0, -3.0), 1.0), white_light);
 
     // objects
     scene.add_object(Sphere::new((-2.5, 0.5, -3.0), 1.0), green_metal);
@@ -55,22 +69,15 @@ fn main() {
     scene.add_object(Sphere::new((-1.0, -0.5, -2.5), 0.5), water);
     scene.add_object(Sphere::new((0.0, -0.75, -2.5), 0.5), crown_glass);
     scene.add_object(Sphere::new((1.0, -1.0, -2.5), -0.5), diamond);
-    scene.add_object(Plane::new((-5.0, 0.0, 0.0), (1.0, 0.0, 0.0)), white_lam); // LEFT
-    scene.add_object(Plane::new((5.0, 0.0, 0.0), (-1.0, 0.0, 0.0)), white_lam); // RIGHT
-    scene.add_object(Plane::new((0.0, -2.0, 0.0), (0.0, 1.0, 0.0)), white_lam); // BOTTOM
-    scene.add_object(Plane::new((0.0, 4.0, 0.0), (0.0, -1.0, 0.0)), white_lam); // TOP
-    scene.add_object(Plane::new((0.0, 0.0, -7.0), (0.0, 0.0, 1.0)), white_lam); // FRONT
-    scene.add_object(Plane::new((0.0, 0.0, 2.0), (0.0, 0.0, -1.0)), white_lam); // BACK
-    scene.add_object(Sphere::new((0.0, 4.0, -3.0), 1.0), white_light);
 
     let tracer = PathTracer::new(scene, 25);
 
     let camera = Camera {
-        position: (0.0, 0.0, 0.5).into(),
+        position: (0.0, 0.0, 5.0).into(),
         width: 800,
         height: 600,
-        fov: 90.0,
-        samples: 10,
+        fov: 45.0,
+        samples: 5,
     };
     let rng = XorShiftRng::seed_from_u64(0);
     let img = camera.render(tracer, rng);

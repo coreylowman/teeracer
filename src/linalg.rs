@@ -1,8 +1,24 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
+use std::{
+    fmt::Debug,
+    ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub},
+};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct Three<T> {
     data: [T; 3],
+}
+
+impl<T> Debug for Three<T>
+where
+    T: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Three")
+            .field(&self.data[0])
+            .field(&self.data[1])
+            .field(&self.data[2])
+            .finish()
+    }
 }
 
 impl<T> Three<T> {
@@ -180,6 +196,19 @@ where
 {
     pub fn dot(&self, rhs: &Self) -> T {
         self[0] * rhs[0] + self[1] * rhs[1] + self[2] * rhs[2]
+    }
+}
+
+impl<T> Three<T>
+where
+    T: Mul<Output = T> + Sub<Output = T> + Copy,
+{
+    pub fn cross(&self, other: &Self) -> Self {
+        Self::new(
+            self[1] * other[2] - self[2] * other[1],
+            self[2] * other[0] - self[0] * other[2],
+            self[0] * other[1] - self[1] * other[0],
+        )
     }
 }
 

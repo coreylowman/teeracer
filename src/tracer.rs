@@ -3,7 +3,7 @@ use crate::material::Material;
 use crate::ray::{Absorb, Bounce, Hit, Interaction, Ray};
 use crate::scene::{ObjectIdx, Scene};
 use rand::prelude::Rng;
-use rand_distr::{Distribution, UnitSphere};
+use rand_distr::{Distribution, UnitBall, UnitSphere};
 
 pub struct PathTracer {
     scene: Scene,
@@ -95,7 +95,7 @@ impl Bounce {
 impl Absorb {
     pub fn emit(&self, material: &Material) -> Three<f64> {
         match material {
-            &Material::DiffuseLight { rgb } => rgb,
+            &Material::DiffuseLight { rgb, power } => rgb * power,
             _ => Three::new(0.0, 0.0, 0.0),
         }
     }
@@ -111,25 +111,25 @@ impl Hit {
         match material {
             &Material::Lambertian { rgb: _ } => {
                 let scattered = self.normal;
-                let mut noise = Three::random_unit(rng);
-                if noise.dot(&self.normal).is_sign_negative() {
+                let mut noise = random_unit(rng);
+                if noise.dot(&self.normal) < 0.0 {
                     noise = -noise;
                 }
                 let direction = (scattered + noise).normalized();
-                Some(direction).filter(|d| d.dot(&self.normal) > 0.0)
+                Some(direction)
             }
             &Material::Metal { rgb: _, fuzz } => {
-                let scattered = ray.direction.reflect(&self.normal);
-                let mut noise = Three::random_unit(rng);
-                if noise.dot(&self.normal).is_sign_negative() {
+                let scattered = reflect(ray.direction, self.normal);
+                let mut noise = random_unit_in(rng);
+                if noise.dot(&self.normal) < 0.0 {
                     noise = -noise;
                 }
                 let direction = (scattered + noise * fuzz).normalized();
-                Some(direction).filter(|d| d.dot(&self.normal) > 0.0)
+                Some(direction)
             }
             &Material::Dielectric(index_of_refraction) => {
                 let cos_theta = ray.direction.dot(&self.normal);
-                let exiting = cos_theta.is_sign_positive();
+                let exiting = cos_theta > 0.0;
                 let outward_normal = if exiting { -self.normal } else { self.normal };
                 let ratio = if exiting {
                     index_of_refraction.value()
@@ -145,24 +145,26 @@ impl Hit {
                 let reflectance = r1 + (1.0 - r1) * (1.0 - cos_theta).powi(5);
 
                 if ratio * sin_theta > 1.0 || reflectance > rng.gen_range(0.0..1.0) {
-                    Some(ray.direction.reflect(&outward_normal).normalized())
+                    Some(reflect(ray.direction, outward_normal).normalized())
                 } else {
                     let perp = (ray.direction + outward_normal * cos_theta) * ratio;
                     let para = outward_normal * -(1.0 - perp.length_squared()).abs().sqrt();
                     Some((perp + para).normalized())
                 }
             }
-            Material::DiffuseLight { rgb: _ } => None,
+            Material::DiffuseLight { rgb: _, power: _ } => None,
         }
     }
 }
 
-impl Three<f64> {
-    fn reflect(&self, normal: &Self) -> Self {
-        *self - *normal * (self.dot(normal) * 2.0)
-    }
+fn reflect(d: Three<f64>, n: Three<f64>) -> Three<f64> {
+    d - n * (d.dot(&n) * 2.0)
+}
 
-    fn random_unit<R: Rng>(rng: &mut R) -> Self {
-        UnitSphere.sample(rng).into()
-    }
+fn random_unit<R: Rng>(rng: &mut R) -> Three<f64> {
+    UnitSphere.sample(rng).into()
+}
+
+fn random_unit_in<R: Rng>(rng: &mut R) -> Three<f64> {
+    UnitBall.sample(rng).into()
 }
