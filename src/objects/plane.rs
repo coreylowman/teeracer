@@ -17,7 +17,7 @@ impl Plane {
 }
 
 impl CanHit for Plane {
-    fn hit_by(&self, ray: Ray) -> Option<Hit> {
+    fn hit_by(&self, ray: &Ray) -> Option<Hit> {
         let denom = self.normal.dot(&ray.direction);
         let origin_to_center = self.center - ray.origin;
         Some(origin_to_center.dot(&self.normal) / denom)

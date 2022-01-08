@@ -7,7 +7,7 @@ use rand_distr::{Distribution, UnitBall, UnitSphere};
 
 pub struct PathTracer {
     scene: Scene,
-    interactions: Vec<Option<Interaction>>,
+    interactions: Vec<Interaction>,
     depth: usize,
 }
 
@@ -24,17 +24,20 @@ impl PathTracer {
         assert!(self.interactions.len() == 0);
         let mut opt_ray = Some(root_ray);
         while let Some(ray) = opt_ray {
-            let opt_bounce = self
+            let opt_hit = self
                 .scene
                 .objects()
                 .iter()
                 .enumerate()
-                .map(|(i, obj)| obj.hit_by(ray).map(|h| (h, ObjectIdx(i))))
+                .map(|(i, obj)| obj.hit_by(&ray).map(|h| (h, ObjectIdx(i))))
                 .filter(|h| h.is_some())
                 .min()
-                .flatten()
-                .map(|(hit, obj_idx)| {
-                    match hit.scatter(ray, self.scene.material_for(obj_idx), rng) {
+                .flatten();
+
+            let interaction = match opt_hit {
+                None => Interaction::Miss,
+                Some((hit, obj_idx)) => {
+                    match hit.scatter(&ray, self.scene.material_for(obj_idx), rng) {
                         Some(direction) => Interaction::Bounced(Bounce {
                             incoming: ray,
                             hit,
@@ -50,14 +53,13 @@ impl PathTracer {
                             obj_idx,
                         }),
                     }
-                });
-            self.interactions.push(opt_bounce);
-            opt_ray = opt_bounce
-                .map(|i| match i {
-                    Interaction::Bounced(b) => Some(b.outgoing),
-                    _ => None,
-                })
-                .flatten();
+                }
+            };
+            self.interactions.push(interaction);
+            opt_ray = match interaction {
+                Interaction::Bounced(Bounce { outgoing, .. }) => Some(outgoing),
+                _ => None,
+            };
             if self.interactions.len() >= self.depth {
                 break;
             }
@@ -66,13 +68,13 @@ impl PathTracer {
         let mut color: Three<f64> = (0.0, 0.0, 0.0).into();
         while let Some(interaction) = self.interactions.pop() {
             match interaction {
-                Some(Interaction::Bounced(bounce)) => {
+                Interaction::Bounced(bounce) => {
                     color *= bounce.albedo(self.scene.material_for(bounce.obj_idx))
                 }
-                Some(Interaction::Absorbed(absorb)) => {
+                Interaction::Absorbed(absorb) => {
                     color = absorb.emit(self.scene.material_for(absorb.obj_idx))
                 }
-                None => color.fill(0.0),
+                Interaction::Miss => color.fill(0.0),
             }
         }
         color
@@ -104,12 +106,12 @@ impl Absorb {
 impl Hit {
     pub fn scatter<R: Rng>(
         &self,
-        ray: Ray,
+        ray: &Ray,
         material: &Material,
         rng: &mut R,
     ) -> Option<Three<f64>> {
         match material {
-            &Material::Lambertian { rgb: _ } => {
+            Material::Lambertian { rgb: _ } => {
                 let scattered = self.normal;
                 let mut noise = random_unit(rng);
                 if noise.dot(&self.normal) < 0.0 {
@@ -127,7 +129,7 @@ impl Hit {
                 let direction = (scattered + noise * fuzz).normalized();
                 Some(direction)
             }
-            &Material::Dielectric(index_of_refraction) => {
+            Material::Dielectric(index_of_refraction) => {
                 let cos_theta = ray.direction.dot(&self.normal);
                 let exiting = cos_theta > 0.0;
                 let outward_normal = if exiting { -self.normal } else { self.normal };

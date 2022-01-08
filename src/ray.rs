@@ -44,7 +44,7 @@ impl Ord for Hit {
 }
 
 pub trait CanHit {
-    fn hit_by(&self, ray: Ray) -> Option<Hit>;
+    fn hit_by(&self, ray: &Ray) -> Option<Hit>;
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -66,4 +66,5 @@ pub struct Absorb {
 pub enum Interaction {
     Bounced(Bounce),
     Absorbed(Absorb),
+    Miss,
 }

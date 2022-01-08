@@ -251,9 +251,7 @@ where
 {
     pub fn normalized(&self) -> Self {
         let l = self.length();
-        Self {
-            data: [self[0] / l, self[1] / l, self[2] / l],
-        }
+        *self / l
     }
 }
 

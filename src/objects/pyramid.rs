@@ -44,7 +44,7 @@ impl Pyramid {
 }
 
 impl CanHit for Pyramid {
-    fn hit_by(&self, ray: Ray) -> Option<Hit> {
+    fn hit_by(&self, ray: &Ray) -> Option<Hit> {
         self.sides
             .iter()
             .map(|side| side.hit_by(ray))

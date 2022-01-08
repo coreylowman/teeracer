@@ -1,4 +1,4 @@
-use crate::linalg::{Length, Three};
+use crate::linalg::Three;
 use crate::ray::{CanHit, Hit, Ray};
 
 #[derive(Debug)]
@@ -31,7 +31,7 @@ impl Triangle {
 
 impl CanHit for Triangle {
     // source: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
-    fn hit_by(&self, ray: Ray) -> Option<Hit> {
+    fn hit_by(&self, ray: &Ray) -> Option<Hit> {
         let pvec = ray.direction.cross(&self.v02);
 
         let determinant = self.v01.dot(&pvec);

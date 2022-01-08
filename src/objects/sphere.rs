@@ -16,7 +16,7 @@ impl Sphere {
 }
 
 impl CanHit for Sphere {
-    fn hit_by(&self, ray: Ray) -> Option<Hit> {
+    fn hit_by(&self, ray: &Ray) -> Option<Hit> {
         let center_to_origin = ray.origin - self.center;
         let a = ray.direction.length_squared();
         let half_b = center_to_origin.dot(&ray.direction);

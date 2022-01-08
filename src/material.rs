@@ -20,7 +20,7 @@ pub enum IndexOfRefraction {
 }
 
 impl IndexOfRefraction {
-    pub const fn value(self) -> f64 {
+    pub const fn value(&self) -> f64 {
         match self {
             Self::Vacuum => 1.0,
             Self::Air => 1.00029,

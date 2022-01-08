@@ -77,7 +77,7 @@ fn main() {
         width: 800,
         height: 600,
         fov: 45.0,
-        samples: 5,
+        samples: 100,
     };
     let rng = XorShiftRng::seed_from_u64(0);
     let img = camera.render(tracer, rng);
