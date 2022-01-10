@@ -6,7 +6,6 @@ mod ray;
 mod scene;
 mod tracer;
 
-use rand::SeedableRng;
 use rand_xorshift::XorShiftRng;
 
 use crate::camera::Camera;
@@ -58,7 +57,7 @@ fn main() {
         width: 800,
         height: 600,
         fov: 45.0,
-        samples: 5,
+        samples: 100,
         tracer: PathTracer::new(scene, 25),
     };
     let img = camera.render::<XorShiftRng>();
