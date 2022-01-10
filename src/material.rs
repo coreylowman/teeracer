@@ -1,11 +1,57 @@
 use crate::linalg::Three;
 
 #[derive(Debug, Clone, Copy)]
+pub struct Lambertian {
+    pub rgb: Three<f64>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Metal {
+    pub rgb: Three<f64>,
+    pub fuzz: Option<f64>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Dielectric {
+    pub ior: IndexOfRefraction,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DiffuseLight {
+    pub rgb: Three<f64>,
+    pub power: f64,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub enum Material {
-    Lambertian { rgb: Three<f64> },
-    Metal { rgb: Three<f64>, fuzz: f64 },
-    Dielectric(IndexOfRefraction),
-    DiffuseLight { rgb: Three<f64>, power: f64 },
+    Lambertian(Lambertian),
+    Metal(Metal),
+    Dielectric(Dielectric),
+    DiffuseLight(DiffuseLight),
+}
+
+impl Into<Material> for Lambertian {
+    fn into(self) -> Material {
+        Material::Lambertian(self)
+    }
+}
+
+impl Into<Material> for Metal {
+    fn into(self) -> Material {
+        Material::Metal(self)
+    }
+}
+
+impl Into<Material> for Dielectric {
+    fn into(self) -> Material {
+        Material::Dielectric(self)
+    }
+}
+
+impl Into<Material> for DiffuseLight {
+    fn into(self) -> Material {
+        Material::DiffuseLight(self)
+    }
 }
 
 #[allow(dead_code)]

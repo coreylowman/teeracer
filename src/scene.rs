@@ -1,4 +1,7 @@
-use crate::{material::Material, ray::CanHit};
+use crate::{
+    material::Material,
+    ray::{CanHit, Hit, Ray},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MaterialIdx(usize);
@@ -21,9 +24,9 @@ impl Scene {
         }
     }
 
-    pub fn add_material(&mut self, material: Material) -> MaterialIdx {
+    pub fn add_material<M: Into<Material>>(&mut self, material: M) -> MaterialIdx {
         let idx = MaterialIdx(self.materials.len());
-        self.materials.push(material);
+        self.materials.push(material.into());
         idx
     }
 
@@ -39,7 +42,18 @@ impl Scene {
         &self.materials[mat_idx.0]
     }
 
-    pub fn objects(&self) -> &Vec<Box<dyn CanHit>> {
-        &self.objects
+    pub fn hit(&self, ray: &Ray) -> Option<(Hit, ObjectIdx)> {
+        let mut opt_hit = None;
+        let t_min = 1e-3;
+        let mut t_max = f64::INFINITY;
+        for (i, obj) in self.objects.iter().enumerate() {
+            if let Some(hit) = obj.hit_by(&ray, t_min, t_max) {
+                if hit.distance < t_max {
+                    opt_hit = Some((hit, ObjectIdx(i)));
+                    t_max = hit.distance;
+                }
+            }
+        }
+        opt_hit
     }
 }

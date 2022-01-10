@@ -11,19 +11,18 @@ use rand_xorshift::XorShiftRng;
 
 use crate::camera::Camera;
 use crate::linalg::Three;
-use crate::material::{IndexOfRefraction, Material};
+use crate::material::{Dielectric, DiffuseLight, IndexOfRefraction, Lambertian, Metal};
 use crate::objects::{Plane, Sphere};
 use crate::scene::Scene;
 use crate::tracer::PathTracer;
 
 impl Into<Three<f64>> for Three<u8> {
     fn into(self) -> Three<f64> {
-        (
-            self[0] as f64 / 255.0,
-            self[1] as f64 / 255.0,
-            self[2] as f64 / 255.0,
+        Three::new(
+            self.x as f64 / 255.0,
+            self.y as f64 / 255.0,
+            self.z as f64 / 255.0,
         )
-            .into()
     }
 }
 
@@ -36,17 +35,23 @@ fn main() {
     let mut scene = Scene::new();
 
     // materials
-    let white_lam = scene.add_material(Material::Lambertian { rgb: WHITE.into() });
-    let green_metal = scene.add_material(Material::Metal {
+    let white_lam = scene.add_material(Lambertian { rgb: WHITE.into() });
+    let green_metal = scene.add_material(Metal {
         rgb: GREEN.into(),
-        fuzz: 0.0,
+        fuzz: None,
     });
-    let red_lam = scene.add_material(Material::Lambertian { rgb: RED.into() });
-    let blue_lam = scene.add_material(Material::Lambertian { rgb: BLUE.into() });
-    let water = scene.add_material(Material::Dielectric(IndexOfRefraction::Water));
-    let crown_glass = scene.add_material(Material::Dielectric(IndexOfRefraction::CrownGlass));
-    let diamond = scene.add_material(Material::Dielectric(IndexOfRefraction::Diamond));
-    let white_light = scene.add_material(Material::DiffuseLight {
+    let red_lam = scene.add_material(Lambertian { rgb: RED.into() });
+    let blue_lam = scene.add_material(Lambertian { rgb: BLUE.into() });
+    let water = scene.add_material(Dielectric {
+        ior: IndexOfRefraction::Water,
+    });
+    let crown_glass = scene.add_material(Dielectric {
+        ior: IndexOfRefraction::CrownGlass,
+    });
+    let diamond = scene.add_material(Dielectric {
+        ior: IndexOfRefraction::Diamond,
+    });
+    let white_light = scene.add_material(DiffuseLight {
         rgb: WHITE.into(),
         power: 3.0,
     });

@@ -1,5 +1,4 @@
 use crate::linalg::Three;
-use crate::scene::ObjectIdx;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ray {
@@ -44,27 +43,12 @@ impl Ord for Hit {
 }
 
 pub trait CanHit {
-    fn hit_by(&self, ray: &Ray) -> Option<Hit>;
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Bounce {
-    pub incoming: Ray,
-    pub hit: Hit,
-    pub obj_idx: ObjectIdx,
-    pub outgoing: Ray,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Absorb {
-    pub incoming: Ray,
-    pub hit: Hit,
-    pub obj_idx: ObjectIdx,
+    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit>;
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum Interaction {
-    Bounced(Bounce),
-    Absorbed(Absorb),
-    Miss,
+    Bounced { attenuation: Three<f64> },
+    Absorbed { emission: Three<f64> },
+    Missed,
 }

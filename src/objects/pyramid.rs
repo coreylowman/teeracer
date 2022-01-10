@@ -44,10 +44,10 @@ impl Pyramid {
 }
 
 impl CanHit for Pyramid {
-    fn hit_by(&self, ray: &Ray) -> Option<Hit> {
+    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
         self.sides
             .iter()
-            .map(|side| side.hit_by(ray))
+            .map(|side| side.hit_by(ray, t_min, t_max))
             .filter(|hit| hit.is_some())
             .min()
             .flatten()

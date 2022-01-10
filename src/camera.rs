@@ -20,9 +20,9 @@ pub struct Camera {
 impl Into<Rgb<u8>> for Three<f64> {
     fn into(self) -> Rgb<u8> {
         Rgb([
-            (self[0].clamp(0.0, 1.0) * 255.0).round() as u8,
-            (self[1].clamp(0.0, 1.0) * 255.0).round() as u8,
-            (self[2].clamp(0.0, 1.0) * 255.0).round() as u8,
+            (self.x.clamp(0.0, 1.0) * 255.0).round() as u8,
+            (self.y.clamp(0.0, 1.0) * 255.0).round() as u8,
+            (self.z.clamp(0.0, 1.0) * 255.0).round() as u8,
         ])
     }
 }
@@ -52,7 +52,7 @@ impl Camera {
         let mut img = RgbImage::new(self.width as u32, self.height as u32);
         for x in 0..self.width {
             for y in 0..self.height {
-                let total_color = colors[y * self.width + x];
+                let total_color = &colors[y * self.width + x];
                 let mean_color = total_color / self.samples as f64;
                 img.put_pixel(x as u32, y as u32, mean_color.into());
             }

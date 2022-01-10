@@ -1,11 +1,14 @@
+use num_traits::Float;
 use std::{
     fmt::Debug,
-    ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 #[derive(Clone, Copy)]
 pub struct Three<T> {
-    data: [T; 3],
+    pub x: T,
+    pub y: T,
+    pub z: T,
 }
 
 impl<T> Debug for Three<T>
@@ -14,16 +17,16 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Three")
-            .field(&self.data[0])
-            .field(&self.data[1])
-            .field(&self.data[2])
+            .field(&self.x)
+            .field(&self.y)
+            .field(&self.z)
             .finish()
     }
 }
 
 impl<T> Three<T> {
     pub const fn new(x: T, y: T, z: T) -> Self {
-        Self { data: [x, y, z] }
+        Self { x, y, z }
     }
 }
 
@@ -32,21 +35,22 @@ where
     T: Copy,
 {
     fn from(t: T) -> Self {
-        Self { data: [t, t, t] }
+        Self::new(t, t, t)
     }
 }
 
 impl<T> From<(T, T, T)> for Three<T> {
     fn from(ts: (T, T, T)) -> Self {
-        Self {
-            data: [ts.0, ts.1, ts.2],
-        }
+        Self::new(ts.0, ts.1, ts.2)
     }
 }
 
-impl<T> From<[T; 3]> for Three<T> {
+impl<T> From<[T; 3]> for Three<T>
+where
+    T: Copy,
+{
     fn from(ts: [T; 3]) -> Self {
-        Self { data: ts }
+        Self::new(ts[0], ts[1], ts[2])
     }
 }
 
@@ -55,22 +59,7 @@ where
     T: Default,
 {
     fn default() -> Self {
-        Self {
-            data: [Default::default(), Default::default(), Default::default()],
-        }
-    }
-}
-
-impl<T> Index<usize> for Three<T> {
-    type Output = T;
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.data[index]
-    }
-}
-
-impl<T> IndexMut<usize> for Three<T> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.data[index]
+        Self::new(Default::default(), Default::default(), Default::default())
     }
 }
 
@@ -80,9 +69,17 @@ where
 {
     type Output = Self;
     fn mul(self, rhs: T) -> Self::Output {
-        Self {
-            data: [self[0] * rhs, self[1] * rhs, self[2] * rhs],
-        }
+        Self::new(self.x * rhs, self.y * rhs, self.z * rhs)
+    }
+}
+
+impl<T> Mul<T> for &Three<T>
+where
+    T: Mul<Output = T> + Copy,
+{
+    type Output = Three<T>;
+    fn mul(self, rhs: T) -> Self::Output {
+        Three::new(self.x * rhs, self.y * rhs, self.z * rhs)
     }
 }
 
@@ -91,9 +88,9 @@ where
     T: MulAssign + Copy,
 {
     fn mul_assign(&mut self, rhs: T) {
-        for i in 0..3 {
-            self[i] *= rhs;
-        }
+        self.x *= rhs;
+        self.y *= rhs;
+        self.z *= rhs;
     }
 }
 
@@ -103,9 +100,17 @@ where
 {
     type Output = Self;
     fn mul(self, rhs: Three<T>) -> Self::Output {
-        Self {
-            data: [self[0] * rhs[0], self[1] * rhs[1], self[2] * rhs[2]],
-        }
+        Self::new(self.x * rhs.x, self.y * rhs.y, self.z * rhs.z)
+    }
+}
+
+impl<T> Mul<&Three<T>> for Three<T>
+where
+    T: Mul<Output = T> + Copy,
+{
+    type Output = Self;
+    fn mul(self, rhs: &Three<T>) -> Self::Output {
+        Self::new(self.x * rhs.x, self.y * rhs.y, self.z * rhs.z)
     }
 }
 
@@ -114,21 +119,54 @@ where
     T: MulAssign + Copy,
 {
     fn mul_assign(&mut self, rhs: Self) {
-        for i in 0..3 {
-            self[i] *= rhs[i];
-        }
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+        self.z *= rhs.z;
+    }
+}
+
+impl<T> MulAssign<&Self> for Three<T>
+where
+    T: MulAssign + Copy,
+{
+    fn mul_assign(&mut self, rhs: &Self) {
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+        self.z *= rhs.z;
     }
 }
 
 impl<T> Div<T> for Three<T>
 where
-    T: Div<Output = T> + Copy,
+    T: Div<Output = T> + Copy + Float,
 {
     type Output = Self;
     fn div(self, rhs: T) -> Self::Output {
-        Self {
-            data: [self[0] / rhs, self[1] / rhs, self[2] / rhs],
-        }
+        let inv_rhs = rhs.recip();
+        Self::new(self.x * inv_rhs, self.y * inv_rhs, self.z * inv_rhs)
+    }
+}
+
+impl<T> Div<T> for &Three<T>
+where
+    T: Div<Output = T> + Copy + Float,
+{
+    type Output = Three<T>;
+    fn div(self, rhs: T) -> Self::Output {
+        let inv_rhs = rhs.recip();
+        Three::new(self.x * inv_rhs, self.y * inv_rhs, self.z * inv_rhs)
+    }
+}
+
+impl<T> DivAssign<T> for Three<T>
+where
+    T: MulAssign + Copy + Float,
+{
+    fn div_assign(&mut self, rhs: T) {
+        let inv_rhs = rhs.recip();
+        self.x *= inv_rhs;
+        self.y *= inv_rhs;
+        self.z *= inv_rhs;
     }
 }
 
@@ -138,9 +176,7 @@ where
 {
     type Output = Self;
     fn neg(self) -> Self::Output {
-        Self {
-            data: [-self[0], -self[1], -self[2]],
-        }
+        Self::new(-self.x, -self.y, -self.z)
     }
 }
 
@@ -150,9 +186,27 @@ where
 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
-        Self {
-            data: [self[0] + rhs[0], self[1] + rhs[1], self[2] + rhs[2]],
-        }
+        Self::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
+    }
+}
+
+impl<T> Add<&Self> for Three<T>
+where
+    T: Add<Output = T> + Copy,
+{
+    type Output = Self;
+    fn add(self, rhs: &Self) -> Self::Output {
+        Self::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
+    }
+}
+
+impl<T> Add<Self> for &Three<T>
+where
+    T: Add<Output = T> + Copy,
+{
+    type Output = Three<T>;
+    fn add(self, rhs: Self) -> Self::Output {
+        Three::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
     }
 }
 
@@ -161,20 +215,20 @@ where
     T: AddAssign + Copy,
 {
     fn add_assign(&mut self, rhs: Self) {
-        for i in 0..3 {
-            self[i] += rhs[i];
-        }
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
     }
 }
 
-impl<T> DivAssign<T> for Three<T>
+impl<T> AddAssign<&Self> for Three<T>
 where
-    T: DivAssign + Copy,
+    T: AddAssign + Copy,
 {
-    fn div_assign(&mut self, rhs: T) {
-        for i in 0..3 {
-            self[i] /= rhs;
-        }
+    fn add_assign(&mut self, rhs: &Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
     }
 }
 
@@ -184,9 +238,49 @@ where
 {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
-        Self {
-            data: [self[0] - rhs[0], self[1] - rhs[1], self[2] - rhs[2]],
-        }
+        Self::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
+    }
+}
+
+impl<T> Sub<&Self> for Three<T>
+where
+    T: Sub<Output = T> + Copy,
+{
+    type Output = Self;
+    fn sub(self, rhs: &Self) -> Self::Output {
+        Self::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
+    }
+}
+
+impl<T> Sub<Self> for &Three<T>
+where
+    T: Sub<Output = T> + Copy,
+{
+    type Output = Three<T>;
+    fn sub(self, rhs: Self) -> Self::Output {
+        Three::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
+    }
+}
+
+impl<T> SubAssign for Three<T>
+where
+    T: SubAssign + Copy,
+{
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
+        self.z -= rhs.z;
+    }
+}
+
+impl<T> SubAssign<&Self> for Three<T>
+where
+    T: SubAssign + Copy,
+{
+    fn sub_assign(&mut self, rhs: &Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
+        self.z -= rhs.z;
     }
 }
 
@@ -195,7 +289,7 @@ where
     T: Mul<Output = T> + Add<Output = T> + Copy,
 {
     pub fn dot(&self, rhs: &Self) -> T {
-        self[0] * rhs[0] + self[1] * rhs[1] + self[2] * rhs[2]
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 }
 
@@ -205,9 +299,9 @@ where
 {
     pub fn cross(&self, other: &Self) -> Self {
         Self::new(
-            self[1] * other[2] - self[2] * other[1],
-            self[2] * other[0] - self[0] * other[2],
-            self[0] * other[1] - self[1] * other[0],
+            self.y * other.z - self.z * other.y,
+            self.z * other.x - self.x * other.z,
+            self.x * other.y - self.y * other.x,
         )
     }
 }
@@ -218,40 +312,25 @@ pub trait Length<T> {
     fn is_unit(&self) -> bool;
 }
 
-impl Length<f32> for Three<f32> {
-    fn length_squared(&self) -> f32 {
-        self.dot(&self)
-    }
-    fn length(&self) -> f32 {
-        self.length_squared().sqrt()
-    }
-    fn is_unit(&self) -> bool {
-        (self.length() - 1.0).abs() <= 1e-6
-    }
-}
-
 impl Length<f64> for Three<f64> {
     fn length_squared(&self) -> f64 {
         self.dot(&self)
     }
-
     fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
-
     fn is_unit(&self) -> bool {
         (self.length() - 1.0).abs() <= 1e-6
     }
 }
 
-impl<T> Three<T>
-where
-    Three<T>: Length<T>,
-    T: Div<Output = T> + Copy,
-{
+impl Three<f64> {
     pub fn normalized(&self) -> Self {
-        let l = self.length();
-        *self / l
+        self / self.length()
+    }
+
+    pub fn normalize(&mut self) {
+        *self /= self.length();
     }
 }
 
@@ -260,8 +339,8 @@ where
     T: Copy,
 {
     pub fn fill(&mut self, value: T) {
-        for i in 0..3 {
-            self[i] = value;
-        }
+        self.x = value;
+        self.y = value;
+        self.z = value;
     }
 }

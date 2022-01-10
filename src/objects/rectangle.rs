@@ -23,11 +23,11 @@ impl Rectangle {
 }
 
 impl CanHit for Rectangle {
-    fn hit_by(&self, ray: &Ray) -> Option<Hit> {
+    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
         let denom = self.normal.dot(&ray.direction);
         let origin_to_center = self.center - ray.origin;
         Some(origin_to_center.dot(&self.normal) / denom)
-            .filter(|&v| v.is_finite() && v >= 1e-3)
+            .filter(|&v| v.is_finite() && t_min <= v && v < t_max)
             .map(|distance| {
                 let position = ray.origin + ray.direction * distance;
                 Hit {
@@ -42,6 +42,11 @@ impl CanHit for Rectangle {
 
 impl Three<f64> {
     fn between(&self, min: &Self, max: &Self) -> bool {
-        (0..3).all(|i| self[i] - min[i] >= -1e-3 && self[i] - max[i] <= 1e-3)
+        self.x - min.x >= -1e-3
+            && self.x - max.x <= 1e-3
+            && self.y - min.y >= -1e-3
+            && self.y - max.y <= 1e-3
+            && self.z - min.z >= -1e-3
+            && self.z - max.z <= 1e-3
     }
 }
