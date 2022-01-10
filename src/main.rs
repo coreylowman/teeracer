@@ -61,7 +61,6 @@ fn main() {
         samples: 5,
         tracer: PathTracer::new(scene, 25),
     };
-    let rng = XorShiftRng::seed_from_u64(0);
-    let img = camera.render(rng);
+    let img = camera.render::<XorShiftRng>();
     img.save("output.png").expect("Failed to save image.");
 }
