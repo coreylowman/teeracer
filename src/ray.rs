@@ -45,10 +45,3 @@ impl Ord for Hit {
 pub trait CanHit {
     fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit>;
 }
-
-#[derive(Debug, Clone, Copy)]
-pub enum Interaction {
-    Bounced { attenuation: Three<f64> },
-    Absorbed { emission: Three<f64> },
-    Missed,
-}

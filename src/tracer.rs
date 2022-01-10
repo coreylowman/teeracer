@@ -1,114 +1,93 @@
 use crate::linalg::{Length, Three};
 use crate::material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
-use crate::ray::{Hit, Interaction, Ray};
+use crate::ray::{Hit, Ray};
 use crate::scene::Scene;
 use rand::prelude::Rng;
 use rand_distr::{Distribution, UnitBall, UnitSphere};
 
 pub struct PathTracer {
     scene: Scene,
-    interactions: Vec<Interaction>,
     depth: usize,
 }
 
-struct Scatter {
-    direction: Option<Three<f64>>,
-    color: Three<f64>,
+enum LightBehavior {
+    Scatter { direction: Three<f64> },
+    Absorb,
+}
+
+struct MaterialInteraction {
+    attenuation: Three<f64>,
+    light_behavior: LightBehavior,
 }
 
 impl PathTracer {
     pub fn new(scene: Scene, depth: usize) -> Self {
-        Self {
-            scene,
-            interactions: Vec::with_capacity(depth),
-            depth,
-        }
+        Self { scene, depth }
     }
 
-    pub fn trace<R: Rng>(&mut self, root_ray: Ray, rng: &mut R) -> Three<f64> {
-        assert!(self.interactions.len() == 0);
-        let mut opt_ray = Some(root_ray);
-        while let Some(ray) = opt_ray {
-            let opt_hit = self.scene.hit(&ray);
-            let interaction = match opt_hit {
-                None => {
-                    opt_ray = None;
-                    Interaction::Missed
-                }
-                Some((hit, obj_idx)) => {
-                    let material = self.scene.material_for(obj_idx);
-                    let scatter = scatter(&ray, &hit, material, rng);
-                    opt_ray = scatter.direction.map(|direction| Ray {
-                        origin: hit.position,
-                        direction,
-                    });
-                    match scatter.direction {
-                        Some(_) => Interaction::Bounced {
-                            attenuation: scatter.color,
-                        },
-                        None => Interaction::Absorbed {
-                            emission: scatter.color,
-                        },
+    pub fn trace<R: Rng>(&mut self, mut ray: Ray, rng: &mut R) -> Three<f64> {
+        let mut color: Three<f64> = 1.0.into();
+        for _ in 0..self.depth {
+            match self.scene.cast(&ray) {
+                Some((hit, material)) => {
+                    let interaction = material.interact(&ray, &hit, rng);
+                    color *= interaction.attenuation;
+                    match interaction.light_behavior {
+                        LightBehavior::Scatter { direction } => {
+                            ray.origin = hit.position;
+                            ray.direction = direction;
+                        }
+                        LightBehavior::Absorb => return color,
                     }
                 }
+                None => return 0.0.into(),
             };
-            self.interactions.push(interaction);
-            if self.interactions.len() >= self.depth {
-                break;
-            }
         }
-
-        let mut color: Three<f64> = (0.0, 0.0, 0.0).into();
-        while let Some(interaction) = self.interactions.pop() {
-            match interaction {
-                Interaction::Bounced { attenuation } => color *= attenuation,
-                Interaction::Absorbed { emission } => color += emission,
-                Interaction::Missed => color.fill(0.0),
-            }
-        }
-        color
+        0.0.into()
     }
 }
 
-fn scatter<R: Rng>(ray: &Ray, hit: &Hit, material: &Material, rng: &mut R) -> Scatter {
-    match material {
-        Material::Lambertian(material) => material.scatter(ray, hit, rng),
-        Material::Metal(material) => material.scatter(ray, hit, rng),
-        Material::Dielectric(material) => material.scatter(ray, hit, rng),
-        Material::DiffuseLight(material) => material.scatter(ray, hit, rng),
+impl Material {
+    fn interact<R: Rng>(&self, ray: &Ray, hit: &Hit, rng: &mut R) -> MaterialInteraction {
+        match self {
+            Material::Lambertian(material) => material.interact(ray, hit, rng),
+            Material::Metal(material) => material.interact(ray, hit, rng),
+            Material::Dielectric(material) => material.interact(ray, hit, rng),
+            Material::DiffuseLight(material) => material.interact(ray, hit, rng),
+        }
     }
 }
 
 impl Lambertian {
-    fn scatter<R: Rng>(&self, _ray: &Ray, hit: &Hit, rng: &mut R) -> Scatter {
+    fn interact<R: Rng>(&self, _ray: &Ray, hit: &Hit, rng: &mut R) -> MaterialInteraction {
         let mut noise = random_unit(rng);
         noise *= noise.dot(&hit.normal).signum(); // NOTE: make noise face in same direction as normal
         let direction = (&hit.normal + &noise).normalized();
         let cos_theta = direction.dot(&hit.normal).max(0.0);
-        Scatter {
-            direction: Some(direction),
-            color: self.rgb * cos_theta,
+        MaterialInteraction {
+            attenuation: self.rgb * cos_theta,
+            light_behavior: LightBehavior::Scatter { direction },
         }
     }
 }
 
 impl Metal {
-    fn scatter<R: Rng>(&self, ray: &Ray, hit: &Hit, rng: &mut R) -> Scatter {
+    fn interact<R: Rng>(&self, ray: &Ray, hit: &Hit, rng: &mut R) -> MaterialInteraction {
         let mut direction = reflect(&ray.direction, &hit.normal).normalized();
         if let Some(value) = self.fuzz {
             let noise = random_unit_in(rng);
             direction += noise * noise.dot(&hit.normal).signum() * value;
             direction.normalize();
         }
-        Scatter {
-            direction: Some(direction),
-            color: self.rgb,
+        MaterialInteraction {
+            attenuation: self.rgb,
+            light_behavior: LightBehavior::Scatter { direction },
         }
     }
 }
 
 impl Dielectric {
-    fn scatter<R: Rng>(&self, ray: &Ray, hit: &Hit, rng: &mut R) -> Scatter {
+    fn interact<R: Rng>(&self, ray: &Ray, hit: &Hit, rng: &mut R) -> MaterialInteraction {
         let cos_theta = ray.direction.dot(&hit.normal);
         let exiting = cos_theta > 0.0;
         let outward_normal = if exiting { -hit.normal } else { hit.normal };
@@ -133,18 +112,18 @@ impl Dielectric {
             (perp + para).normalized()
         };
 
-        Scatter {
-            direction: Some(direction),
-            color: Three::new(1.0, 1.0, 1.0),
+        MaterialInteraction {
+            attenuation: Three::new(1.0, 1.0, 1.0),
+            light_behavior: LightBehavior::Scatter { direction },
         }
     }
 }
 
 impl DiffuseLight {
-    fn scatter<R: Rng>(&self, _ray: &Ray, _hit: &Hit, _rng: &mut R) -> Scatter {
-        Scatter {
-            direction: None,
-            color: self.rgb * self.power,
+    fn interact<R: Rng>(&self, _ray: &Ray, _hit: &Hit, _rng: &mut R) -> MaterialInteraction {
+        MaterialInteraction {
+            attenuation: self.rgb * self.power,
+            light_behavior: LightBehavior::Absorb,
         }
     }
 }

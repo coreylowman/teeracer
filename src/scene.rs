@@ -37,23 +37,23 @@ impl Scene {
         obj_idx
     }
 
-    pub fn material_for(&self, obj_idx: ObjectIdx) -> &Material {
-        let mat_idx = self.object_material_idx[obj_idx.0];
+    fn material_for(&self, obj_idx: usize) -> &Material {
+        let mat_idx = self.object_material_idx[obj_idx];
         &self.materials[mat_idx.0]
     }
 
-    pub fn hit(&self, ray: &Ray) -> Option<(Hit, ObjectIdx)> {
+    pub fn cast(&self, ray: &Ray) -> Option<(Hit, &Material)> {
         let mut opt_hit = None;
         let t_min = 1e-3;
         let mut t_max = f64::INFINITY;
         for (i, obj) in self.objects.iter().enumerate() {
             if let Some(hit) = obj.hit_by(&ray, t_min, t_max) {
                 if hit.distance < t_max {
-                    opt_hit = Some((hit, ObjectIdx(i)));
+                    opt_hit = Some((hit, i));
                     t_max = hit.distance;
                 }
             }
         }
-        opt_hit
+        opt_hit.map(|(h, i)| (h, self.material_for(i)))
     }
 }
