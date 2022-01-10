@@ -57,7 +57,7 @@ fn main() {
         width: 800,
         height: 600,
         fov: 45.0,
-        samples: 100,
+        samples: 1000,
         tracer: PathTracer::new(scene, 25),
     };
     let img = camera.render::<XorShiftRng>();

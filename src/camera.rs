@@ -30,18 +30,24 @@ impl Into<Rgb<u8>> for Three<f64> {
     }
 }
 
+impl<T> Camera<T> {
+    fn empty_image(&self) -> Vec<Three<f64>> {
+        vec![Three::new(0.0, 0.0, 0.0); self.width * self.height]
+    }
+}
+
 impl<T> Camera<T>
 where
     T: Tracer + Sync,
 {
     pub fn render<R: Rng + SeedableRng>(&self) -> RgbImage {
+        let num_pixels = self.width * self.height;
+        let num_rays = num_pixels * self.samples;
         let pb = ProgressBar::new((self.width * self.height * self.samples) as u64).with_style(
             ProgressStyle::default_bar().template("{bar:40} {elapsed_precise}<{eta} {per_sec}"),
         );
         pb.set_draw_rate(1); // NOTE: indicatif drawing is bottleneck with rayon because of high speeds
-        let num_pixels = self.width * self.height;
-        let num_rays = num_pixels * self.samples;
-        let samples: Vec<(usize, usize, Three<f64>)> = (0..num_rays)
+        let colors = (0..num_rays)
             .into_par_iter()
             .map(|ray_idx| {
                 let mut rng = R::seed_from_u64(ray_idx as u64);
@@ -56,12 +62,20 @@ where
                 pb.inc(1);
                 (x, y, color)
             })
-            .collect();
-
-        let mut colors: Vec<Three<f64>> = vec![(0.0, 0.0, 0.0).into(); self.width * self.height];
-        for &(x, y, color) in samples.iter() {
-            colors[y * self.width + x] += color;
-        }
+            .fold(
+                || self.empty_image(),
+                |mut colors, (x, y, color)| {
+                    colors[y * self.width + x] += color;
+                    colors
+                },
+            )
+            .reduce_with(|mut accum, item| {
+                for i in 0..accum.len() {
+                    accum[i] += item[i];
+                }
+                accum
+            })
+            .unwrap();
 
         let mut img = RgbImage::new(self.width as u32, self.height as u32);
         for x in 0..self.width {
