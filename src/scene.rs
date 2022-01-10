@@ -7,7 +7,7 @@ use crate::{
 pub struct MaterialIdx(usize);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ObjectIdx(pub usize);
+pub struct ObjectIdx(usize);
 
 pub struct Scene {
     objects: Vec<Box<dyn CanHit>>,

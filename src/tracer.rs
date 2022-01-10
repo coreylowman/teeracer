@@ -5,6 +5,10 @@ use crate::scene::Scene;
 use rand::prelude::Rng;
 use rand_distr::{Distribution, UnitBall, UnitSphere};
 
+pub trait Tracer {
+    fn trace<R: Rng>(&self, ray: Ray, rng: &mut R) -> Three<f64>;
+}
+
 pub struct PathTracer {
     scene: Scene,
     depth: usize,
@@ -24,8 +28,10 @@ impl PathTracer {
     pub fn new(scene: Scene, depth: usize) -> Self {
         Self { scene, depth }
     }
+}
 
-    pub fn trace<R: Rng>(&mut self, mut ray: Ray, rng: &mut R) -> Three<f64> {
+impl Tracer for PathTracer {
+    fn trace<R: Rng>(&self, mut ray: Ray, rng: &mut R) -> Three<f64> {
         let mut color: Three<f64> = 1.0.into();
         for _ in 0..self.depth {
             match self.scene.cast(&ray) {
@@ -65,7 +71,7 @@ impl Lambertian {
         let direction = (&hit.normal + &noise).normalized();
         let cos_theta = direction.dot(&hit.normal).max(0.0);
         MaterialInteraction {
-            attenuation: self.rgb * cos_theta,
+            attenuation: &self.rgb * cos_theta,
             light_behavior: LightBehavior::Scatter { direction },
         }
     }
@@ -73,10 +79,10 @@ impl Lambertian {
 
 impl Metal {
     fn interact<R: Rng>(&self, ray: &Ray, hit: &Hit, rng: &mut R) -> MaterialInteraction {
-        let mut direction = reflect(&ray.direction, &hit.normal).normalized();
+        let mut direction = reflect(&ray.direction, &hit.normal);
         if let Some(value) = self.fuzz {
             let noise = random_unit_in(rng);
-            direction += noise * noise.dot(&hit.normal).signum() * value;
+            direction += &noise * (noise.dot(&hit.normal).signum() * value);
             direction.normalize();
         }
         MaterialInteraction {
@@ -94,7 +100,7 @@ impl Dielectric {
         let ratio = if exiting {
             self.ior.value()
         } else {
-            1.0 / self.ior.value()
+            self.ior.value().recip()
         };
         let cos_theta = cos_theta.abs();
         let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
@@ -105,7 +111,7 @@ impl Dielectric {
         let reflectance = r1 + (1.0 - r1) * (1.0 - cos_theta).powi(5);
 
         let direction = if ratio * sin_theta > 1.0 || reflectance > rng.gen_range(0.0..1.0) {
-            reflect(&ray.direction, &outward_normal).normalized()
+            reflect(&ray.direction, &outward_normal)
         } else {
             let perp = (&ray.direction + &(&outward_normal * cos_theta)) * ratio;
             let para = &outward_normal * -(1.0 - perp.length_squared()).abs().sqrt();

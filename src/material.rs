@@ -5,10 +5,29 @@ pub struct Lambertian {
     pub rgb: Three<f64>,
 }
 
+impl Lambertian {
+    pub fn new(rgb: Three<f64>) -> Self {
+        Self { rgb }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Metal {
     pub rgb: Three<f64>,
     pub fuzz: Option<f64>,
+}
+
+impl Metal {
+    pub fn new(rgb: Three<f64>) -> Self {
+        Self { rgb, fuzz: None }
+    }
+
+    pub fn fuzzy(rgb: Three<f64>, fuzz: f64) -> Self {
+        Self {
+            rgb,
+            fuzz: Some(fuzz),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -20,6 +39,12 @@ pub struct Dielectric {
 pub struct DiffuseLight {
     pub rgb: Three<f64>,
     pub power: f64,
+}
+
+impl DiffuseLight {
+    pub fn new(rgb: Three<f64>, power: f64) -> Self {
+        Self { rgb, power }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -63,6 +88,12 @@ pub enum IndexOfRefraction {
     Water,
     CrownGlass,
     Diamond,
+}
+
+impl Into<Material> for IndexOfRefraction {
+    fn into(self) -> Material {
+        Material::Dielectric(Dielectric { ior: self })
+    }
 }
 
 impl IndexOfRefraction {

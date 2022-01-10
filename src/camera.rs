@@ -1,6 +1,6 @@
 use crate::linalg::Three;
 use crate::ray::Ray;
-use crate::tracer::PathTracer;
+use crate::tracer::Tracer;
 use image::{Rgb, RgbImage};
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::Rng;
@@ -9,12 +9,13 @@ const FORWARD: Three<f64> = Three::new(0.0, 0.0, -1.0);
 const UP: Three<f64> = Three::new(0.0, 1.0, 0.0);
 const RIGHT: Three<f64> = Three::new(1.0, 0.0, 0.0);
 
-pub struct Camera {
+pub struct Camera<T> {
     pub position: Three<f64>,
     pub fov: f64,
     pub width: usize,
     pub height: usize,
     pub samples: usize,
+    pub tracer: T,
 }
 
 impl Into<Rgb<u8>> for Three<f64> {
@@ -27,8 +28,11 @@ impl Into<Rgb<u8>> for Three<f64> {
     }
 }
 
-impl Camera {
-    pub fn render<R: Rng>(&self, mut tracer: PathTracer, mut rng: R) -> RgbImage {
+impl<T> Camera<T>
+where
+    T: Tracer,
+{
+    pub fn render<R: Rng>(&self, mut rng: R) -> RgbImage {
         let progress = ProgressBar::new((self.width * self.height * self.samples) as u64);
         progress.set_style(
             ProgressStyle::default_bar().template("{bar:40} {elapsed_precise}<{eta} {per_sec}"),
@@ -42,7 +46,7 @@ impl Camera {
                     let jx = x as f64 + rng.gen_range(0.0..1.0);
                     let jy = y as f64 + rng.gen_range(0.0..1.0);
                     let ray = self.ray_through(jx, jy);
-                    colors[i] += tracer.trace(ray, &mut rng);
+                    colors[i] += self.tracer.trace(ray, &mut rng);
                     progress.inc(1);
                     i += 1;
                 }

@@ -7,12 +7,15 @@ pub struct Plane {
 }
 
 impl Plane {
-    pub fn new<I: Into<Three<f64>>>(into_center: I, into_normal: I) -> Self {
-        Self::raw(into_center.into(), into_normal.into())
+    pub fn new<I: Into<Three<f64>>>(center: I, normal: I) -> Self {
+        Self::raw(center.into(), normal.into())
     }
 
     pub fn raw(center: Three<f64>, normal: Three<f64>) -> Self {
-        Self { center, normal }
+        Self {
+            center,
+            normal: normal.normalized(),
+        }
     }
 }
 

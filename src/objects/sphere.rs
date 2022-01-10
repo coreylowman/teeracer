@@ -7,9 +7,9 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new<I: Into<Three<f64>>>(into_center: I, radius: f64) -> Self {
+    pub fn new<I: Into<Three<f64>>>(center: I, radius: f64) -> Self {
         Self {
-            center: into_center.into(),
+            center: center.into(),
             radius_squared: radius.powi(2),
         }
     }
