@@ -1,11 +1,11 @@
 mod plane;
-mod pyramid;
+mod prism;
 mod rectangle;
 mod sphere;
 mod triangle;
 
 pub use plane::Plane;
-pub use pyramid::Pyramid;
+pub use prism::Prism;
 pub use rectangle::Rectangle;
 pub use sphere::Sphere;
 pub use triangle::Triangle;
@@ -15,6 +15,9 @@ use crate::ray::{CanHit, Hit, Ray};
 pub enum Object {
     Plane(Plane),
     Sphere(Sphere),
+    Rectangle(Rectangle),
+    Triangle(Triangle),
+    Prism(Prism),
 }
 
 impl CanHit for Object {
@@ -22,6 +25,9 @@ impl CanHit for Object {
         match self {
             Object::Plane(obj) => obj.hit_by(ray, t_min, t_max),
             Object::Sphere(obj) => obj.hit_by(ray, t_min, t_max),
+            Object::Rectangle(obj) => obj.hit_by(ray, t_min, t_max),
+            Object::Triangle(obj) => obj.hit_by(ray, t_min, t_max),
+            Object::Prism(obj) => obj.hit_by(ray, t_min, t_max),
         }
     }
 }
@@ -35,5 +41,23 @@ impl Into<Object> for Plane {
 impl Into<Object> for Sphere {
     fn into(self) -> Object {
         Object::Sphere(self)
+    }
+}
+
+impl Into<Object> for Rectangle {
+    fn into(self) -> Object {
+        Object::Rectangle(self)
+    }
+}
+
+impl Into<Object> for Triangle {
+    fn into(self) -> Object {
+        Object::Triangle(self)
+    }
+}
+
+impl Into<Object> for Prism {
+    fn into(self) -> Object {
+        Object::Prism(self)
     }
 }

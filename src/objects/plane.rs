@@ -2,8 +2,8 @@ use crate::linalg::Three;
 use crate::ray::{CanHit, Hit, Ray};
 
 pub struct Plane {
-    center: Three<f64>,
-    normal: Three<f64>,
+    pub(super) center: Three<f64>,
+    pub(super) normal: Three<f64>,
 }
 
 impl Plane {

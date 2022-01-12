@@ -1,11 +1,11 @@
 use crate::linalg::Three;
 use crate::ray::{CanHit, Hit, Ray};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Triangle {
-    v0: Three<f64>,
-    v01: Three<f64>,
-    v02: Three<f64>,
+    pub(super) v0: Three<f64>,
+    pub(super) v01: Three<f64>,
+    pub(super) v02: Three<f64>,
 }
 
 impl Triangle {
@@ -26,6 +26,15 @@ impl Triangle {
 
     pub fn normal(&self) -> Three<f64> {
         self.v01.cross(&self.v02).normalized()
+    }
+
+    pub fn rotated_around(&self, origin: &Three<f64>, axis: &Three<f64>, angle: f64) -> Self {
+        let v1 = self.v01 + self.v0;
+        let v2 = self.v02 + self.v0;
+        let v0 = (self.v0 - origin).rotate(axis, angle) + origin;
+        let v1 = (v1 - origin).rotate(axis, angle) + origin;
+        let v2 = (v2 - origin).rotate(axis, angle) + origin;
+        Self::from_points(v0, v1, v2)
     }
 }
 
