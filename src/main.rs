@@ -1,6 +1,6 @@
 mod camera;
 mod material;
-mod objects;
+mod hittables;
 mod ray;
 mod scene;
 mod scenes;

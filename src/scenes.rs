@@ -1,5 +1,5 @@
 use crate::material::{DiffuseLight, IndexOfRefraction, Lambertian, Metal};
-use crate::objects::{Plane, Prism, Sphere};
+use crate::hittables::{Plane, Prism, Sphere};
 use crate::scene::Scene;
 use crate::three::Three;
 
