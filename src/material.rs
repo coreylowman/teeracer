@@ -1,4 +1,4 @@
-use crate::linalg::Three;
+use crate::three::Three;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Lambertian {

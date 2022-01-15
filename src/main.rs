@@ -1,10 +1,10 @@
 mod camera;
-mod linalg;
 mod material;
 mod objects;
 mod ray;
 mod scene;
 mod scenes;
+mod three;
 mod tracer;
 
 use crate::camera::Camera;

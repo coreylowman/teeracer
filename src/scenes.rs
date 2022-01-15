@@ -1,7 +1,7 @@
-use crate::linalg::Three;
 use crate::material::{DiffuseLight, IndexOfRefraction, Lambertian, Metal};
 use crate::objects::{Plane, Prism, Sphere};
 use crate::scene::Scene;
+use crate::three::Three;
 
 const RED: Three<f64> = Three::new(255.0 / 255.0, 102.0 / 255.0, 102.0 / 255.0);
 const GREEN: Three<f64> = Three::new(102.0 / 255.0, 255.0 / 255.0, 102.0 / 255.0);

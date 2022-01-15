@@ -1,5 +1,5 @@
-use crate::linalg::Three;
 use crate::ray::{CanHit, Hit, Ray};
+use crate::three::Three;
 
 pub struct Plane {
     pub(super) center: Three<f64>,

@@ -1,5 +1,5 @@
-use crate::linalg::Three;
 use crate::ray::Ray;
+use crate::three::Three;
 use crate::tracer::Tracer;
 use image::{Rgb, RgbImage};
 use indicatif::{ProgressBar, ProgressStyle};

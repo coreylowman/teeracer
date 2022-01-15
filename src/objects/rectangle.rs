@@ -1,6 +1,6 @@
 use super::Plane;
-use crate::linalg::Three;
 use crate::ray::{CanHit, Hit, Ray};
+use crate::three::Three;
 
 pub struct Rectangle {
     pub(super) min: Three<f64>,
