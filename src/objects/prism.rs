@@ -56,12 +56,16 @@ impl Prism {
 }
 
 impl CanHit for Prism {
-    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
-        self.triangles
-            .iter()
-            .map(|tri| tri.hit_by(ray, t_min, t_max))
-            .filter(|hit| hit.is_some())
-            .min()
-            .flatten()
+    fn hit_by(&self, ray: &Ray, t_min: f64, mut t_max: f64) -> Option<Hit> {
+        let mut opt_hit = None;
+        for obj in self.triangles.iter() {
+            if let Some(hit) = obj.hit_by(&ray, t_min, t_max) {
+                if hit.distance < t_max {
+                    opt_hit = Some(hit);
+                    t_max = hit.distance;
+                }
+            }
+        }
+        opt_hit
     }
 }
