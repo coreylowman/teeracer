@@ -1,6 +1,6 @@
 use crate::{
-    material::Material,
     hittables::Object,
+    material::Material,
     ray::{CanHit, Hit, Ray},
 };
 
