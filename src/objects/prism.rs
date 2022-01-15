@@ -1,5 +1,5 @@
 use super::triangle::Triangle;
-use crate::linalg::{Length, Three};
+use crate::linalg::Three;
 use crate::ray::{CanHit, Hit, Ray};
 
 #[derive(Debug, Clone)]

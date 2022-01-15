@@ -1,4 +1,4 @@
-use crate::linalg::{Length, Three};
+use crate::linalg::Three;
 use crate::material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
 use crate::ray::{Hit, Ray};
 use crate::scene::Scene;
@@ -81,9 +81,9 @@ impl Metal {
     fn interact<R: Rng>(&self, ray: &Ray, hit: &Hit, rng: &mut R) -> MaterialInteraction {
         let mut direction = reflect(&ray.direction, &hit.normal);
         if let Some(value) = self.fuzz {
-            let noise = random_unit_in(rng);
-            direction += &noise * (noise.dot(&hit.normal).signum() * value);
-            direction.normalize();
+            let mut noise = random_unit_in(rng);
+            noise *= noise.dot(&hit.normal).signum() * value;
+            direction = (&direction + &noise).normalized();
         }
         MaterialInteraction {
             attenuation: self.rgb,

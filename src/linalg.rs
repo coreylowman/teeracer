@@ -291,6 +291,10 @@ where
     pub fn dot(&self, rhs: &Self) -> T {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
+
+    pub fn length_squared(&self) -> T {
+        self.dot(&self)
+    }
 }
 
 impl<T> Three<T>
@@ -306,31 +310,22 @@ where
     }
 }
 
-pub trait Length<T> {
-    fn length_squared(&self) -> T;
-    fn length(&self) -> T;
-    fn is_unit(&self) -> bool;
-}
-
-impl Length<f64> for Three<f64> {
-    fn length_squared(&self) -> f64 {
-        self.dot(&self)
-    }
-    fn length(&self) -> f64 {
+impl<T> Three<T>
+where
+    T: Float,
+{
+    pub fn length(&self) -> T {
         self.length_squared().sqrt()
     }
-    fn is_unit(&self) -> bool {
-        (self.length() - 1.0).abs() <= 1e-6
-    }
 }
 
-impl Three<f64> {
+impl<T> Three<T>
+where
+    T: Float,
+    Three<T>: Div<T>,
+{
     pub fn normalized(&self) -> Self {
         self / self.length()
-    }
-
-    pub fn normalize(&mut self) {
-        *self /= self.length();
     }
 }
 
