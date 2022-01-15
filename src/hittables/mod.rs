@@ -10,7 +10,7 @@ pub use rectangle::Rectangle;
 pub use sphere::Sphere;
 pub use triangle::Triangle;
 
-use crate::ray::{CanHit, Hit, Ray};
+use crate::data::{CanHit, Hit, Ray};
 
 pub enum Object {
     Plane(Plane),

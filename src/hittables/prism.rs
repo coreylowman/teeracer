@@ -1,6 +1,5 @@
 use super::triangle::Triangle;
-use crate::ray::{CanHit, Hit, Ray};
-use crate::three::Three;
+use crate::data::{CanHit, Hit, Ray, Three};
 
 #[derive(Debug, Clone)]
 pub struct Prism {

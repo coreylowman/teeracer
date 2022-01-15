@@ -1,11 +1,5 @@
 use rand_xorshift::XorShiftRng;
-use teeracer::camera::Camera;
-use teeracer::tracer::PathTracer;
-
-use teeracer::hittables::{Plane, Sphere};
-use teeracer::material::{DiffuseLight, IndexOfRefraction, Lambertian, Metal};
-use teeracer::scene::Scene;
-use teeracer::three::Three;
+use teeracer::*;
 
 const RED: Three<f64> = Three::new(255.0 / 255.0, 102.0 / 255.0, 102.0 / 255.0);
 const GREEN: Three<f64> = Three::new(102.0 / 255.0, 255.0 / 255.0, 102.0 / 255.0);

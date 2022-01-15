@@ -1,7 +1,5 @@
-use crate::material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
-use crate::ray::{Hit, Ray};
+use crate::data::{Dielectric, DiffuseLight, Hit, Lambertian, Material, Metal, Ray, Three};
 use crate::scene::Scene;
-use crate::three::Three;
 use rand::prelude::Rng;
 use rand_distr::{Distribution, UnitBall, UnitSphere};
 

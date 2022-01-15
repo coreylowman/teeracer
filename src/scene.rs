@@ -1,7 +1,6 @@
 use crate::{
+    data::{CanHit, Hit, Material, Ray},
     hittables::Object,
-    material::Material,
-    ray::{CanHit, Hit, Ray},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
