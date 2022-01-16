@@ -1,10 +1,10 @@
 use rand_xorshift::XorShiftRng;
 use teeracer::*;
 
-const RED: Three<f64> = Three::new(255.0 / 255.0, 102.0 / 255.0, 102.0 / 255.0);
-const GREEN: Three<f64> = Three::new(102.0 / 255.0, 255.0 / 255.0, 102.0 / 255.0);
-const BLUE: Three<f64> = Three::new(102.0 / 255.0, 102.0 / 255.0, 255.0 / 255.0);
-const WHITE: Three<f64> = Three::new(255.0 / 255.0, 255.0 / 255.0, 255.0 / 255.0);
+const RED: Three<f64> = Three::new(1.0, 0.25, 0.25);
+const GREEN: Three<f64> = Three::new(0.25, 1.0, 0.25);
+const BLUE: Three<f64> = Three::new(0.25, 0.25, 1.0);
+const WHITE: Three<f64> = Three::new(1.0, 1.0, 1.0);
 
 fn build_scene() -> Scene {
     let mut scene = Scene::new();
@@ -49,7 +49,7 @@ fn main() {
         width: 800,
         height: 600,
         fov: 45.0,
-        samples: 1000,
+        samples: 10,
         tracer: PathTracer::new(scene, 25),
     };
     let img = camera.render::<XorShiftRng>();
