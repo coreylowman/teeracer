@@ -399,6 +399,29 @@ impl Metal {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub enum IndexOfRefraction {
+    Vacuum,
+    Air,
+    Ice,
+    Water,
+    CrownGlass,
+    Diamond,
+}
+
+impl IndexOfRefraction {
+    pub const fn value(&self) -> f64 {
+        match self {
+            Self::Vacuum => 1.0,
+            Self::Air => 1.00029,
+            Self::Ice => 1.31,
+            Self::Water => 1.33,
+            Self::CrownGlass => 1.52,
+            Self::Diamond => 2.417,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Dielectric {
     pub ior: IndexOfRefraction,
 }
@@ -447,32 +470,9 @@ impl Into<Material> for DiffuseLight {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum IndexOfRefraction {
-    Vacuum,
-    Air,
-    Ice,
-    Water,
-    CrownGlass,
-    Diamond,
-}
-
 impl Into<Material> for IndexOfRefraction {
     fn into(self) -> Material {
         Material::Dielectric(Dielectric { ior: self })
-    }
-}
-
-impl IndexOfRefraction {
-    pub const fn value(&self) -> f64 {
-        match self {
-            Self::Vacuum => 1.0,
-            Self::Air => 1.00029,
-            Self::Ice => 1.31,
-            Self::Water => 1.33,
-            Self::CrownGlass => 1.52,
-            Self::Diamond => 2.417,
-        }
     }
 }
 
@@ -496,8 +496,38 @@ pub struct Hit {
     pub position: Three<f64>,
     pub distance: f64,
     pub normal: Three<f64>,
+    pub sub_object_index: Option<usize>,
 }
 
 pub trait CanHit {
     fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit>;
+}
+
+pub struct Camera {
+    pub position: Three<f64>,
+    pub fov: f64,
+    pub width: usize,
+    pub height: usize,
+}
+
+impl Camera {
+    pub fn empty_image(&self) -> Vec<Three<f64>> {
+        vec![Three::new(0.0, 0.0, 0.0); self.width * self.height]
+    }
+
+    pub fn ray_through(&self, x_screen: f64, y_screen: f64) -> Ray {
+        const FORWARD: Three<f64> = Three::new(0.0, 0.0, -1.0);
+        const UP: Three<f64> = Three::new(0.0, 1.0, 0.0);
+        const RIGHT: Three<f64> = Three::new(1.0, 0.0, 0.0);
+
+        let fov_adjustment = (self.fov.to_radians() / 2.0).tan();
+        let aspect_ratio = (self.width as f64) / (self.height as f64);
+        let x_world = (2.0 * (x_screen / self.width as f64) - 1.0) * aspect_ratio * fov_adjustment;
+        let y_world = (-(2.0 * (y_screen / self.height as f64) - 1.0)) * fov_adjustment;
+        let direction = (RIGHT * x_world + UP * y_world + FORWARD).normalized();
+        Ray {
+            origin: self.position,
+            direction,
+        }
+    }
 }

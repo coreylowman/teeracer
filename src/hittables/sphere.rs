@@ -37,6 +37,7 @@ impl CanHit for Sphere {
                 position,
                 distance,
                 normal,
+                sub_object_index: None,
             }
         })
     }

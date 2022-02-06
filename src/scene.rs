@@ -1,13 +1,11 @@
 use crate::{
-    data::{CanHit, Hit, Material, Ray},
+    data::{CanHit, Hit, Material, Ray, Three},
     hittables::Object,
 };
+use rand::Rng;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MaterialIdx(usize);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ObjectIdx(usize);
 
 pub struct Scene {
     objects: Vec<Object>,
@@ -30,30 +28,35 @@ impl Scene {
         idx
     }
 
-    pub fn add_object<O: Into<Object>>(&mut self, obj: O, mat_idx: MaterialIdx) -> ObjectIdx {
-        let obj_idx = ObjectIdx(self.objects.len());
+    pub fn add_object<O: Into<Object>>(&mut self, obj: O, mat_idx: MaterialIdx) {
         self.objects.push(obj.into());
         self.object_material_idx.push(mat_idx);
-        obj_idx
     }
 
-    fn material_for(&self, obj_idx: usize) -> &Material {
+    pub fn material_for(&self, obj_idx: usize) -> &Material {
         let mat_idx = self.object_material_idx[obj_idx];
         &self.materials[mat_idx.0]
     }
+}
 
-    pub fn cast(&self, ray: &Ray) -> Option<(Hit, &Material)> {
+impl CanHit for Scene {
+    fn hit_by(&self, ray: &Ray, t_min: f64, mut t_max: f64) -> Option<Hit> {
         let mut opt_hit = None;
-        let t_min = 1e-3;
-        let mut t_max = f64::INFINITY;
         for (i, obj) in self.objects.iter().enumerate() {
-            if let Some(hit) = obj.hit_by(&ray, t_min, t_max) {
+            if let Some(mut hit) = obj.hit_by(&ray, t_min, t_max) {
                 if hit.distance < t_max {
-                    opt_hit = Some((hit, i));
+                    hit.sub_object_index = Some(i);
+                    opt_hit = Some(hit);
                     t_max = hit.distance;
                 }
             }
         }
-        opt_hit.map(|(h, i)| (h, self.material_for(i)))
+        opt_hit
     }
+}
+
+pub trait SceneTracer {
+    fn trace<R>(&self, ray: Ray, scene: &Scene, depth: usize, rng: &mut R) -> Option<Three<f64>>
+    where
+        R: Rng;
 }

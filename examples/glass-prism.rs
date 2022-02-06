@@ -1,27 +1,22 @@
 use rand_xorshift::XorShiftRng;
 use teeracer::*;
 
-const RED: Three<f64> = Three::new(1.0, 0.25, 0.25);
-const BLUE: Three<f64> = Three::new(0.25, 0.25, 1.0);
-const WHITE: Three<f64> = Three::new(1.0, 1.0, 1.0);
-const VIOLET: Three<f64> = Three::new(0.5, 0.0, 1.0);
-const Y: Three<f64> = Three::new(0.0, 1.0, 0.0);
-
 fn build_scene() -> Scene {
     let mut scene = Scene::new();
 
     // materials
-    let white_lam = scene.add_material(Lambertian::new(WHITE));
-    let violet_lam = scene.add_material(Lambertian::new(VIOLET));
-    let red_lam = scene.add_material(Lambertian::new(RED));
-    let blue_lam = scene.add_material(Lambertian::new(BLUE));
-    let white_light = scene.add_material(DiffuseLight::new(WHITE, 5.0));
+    let white_lam = scene.add_material(Lambertian::new(1.0.into()));
+    let violet_lam = scene.add_material(Lambertian::new((0.5, 0.0, 1.0).into()));
+    let red_lam = scene.add_material(Lambertian::new((1.0, 0.25, 0.25).into()));
+    let blue_lam = scene.add_material(Lambertian::new((0.25, 0.25, 1.0).into()));
+    let white_light = scene.add_material(DiffuseLight::new(1.0.into(), 5.0));
     let crown_glass = scene.add_material(IndexOfRefraction::CrownGlass);
 
     // lights
     scene.add_object(Sphere::new((0.0, 3.0, -3.0), 1.0), white_light);
 
     // objects
+    const Y: Three<f64> = Three::new(0.0, 1.0, 0.0);
     scene.add_object(
         Prism::new(
             (-0.5, -1.5, -2.0),
@@ -43,17 +38,14 @@ fn build_scene() -> Scene {
     scene
 }
 
-fn main() {
-    let scene = build_scene();
-
+fn main() -> Result<(), image::error::ImageError> {
     let camera = Camera {
         position: (0.0, 0.0, 5.0).into(),
         width: 800,
         height: 600,
         fov: 45.0,
-        samples: 1000,
-        tracer: PathTracer::new(scene, 25),
     };
-    let img = camera.render::<XorShiftRng>();
-    img.save("glass-prism.png").expect("Failed to save image.");
+    let scene = build_scene();
+    render::<PathTracer, XorShiftRng>(scene, camera, 25, 1000).save("glass-prism.png")?;
+    Ok(())
 }

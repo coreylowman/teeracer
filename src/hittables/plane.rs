@@ -31,6 +31,7 @@ impl CanHit for Plane {
                     position,
                     distance,
                     normal: self.normal,
+                    sub_object_index: None,
                 }
             })
     }

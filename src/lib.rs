@@ -1,14 +1,14 @@
-pub mod camera;
 pub mod data;
 pub mod hittables;
+mod rendering;
 pub mod scene;
 pub mod tracer;
 
-pub use camera::Camera;
 pub use data::{
-    CanHit, Dielectric, DiffuseLight, Hit, IndexOfRefraction, Lambertian, Material, Metal, Ray,
-    Three,
+    Camera, CanHit, Dielectric, DiffuseLight, Hit, IndexOfRefraction, Lambertian, Material, Metal,
+    Ray, Three,
 };
 pub use hittables::{Plane, Prism, Rectangle, Sphere, Triangle};
-pub use scene::Scene;
-pub use tracer::{PathTracer, Tracer};
+pub use rendering::render;
+pub use scene::{Scene, SceneTracer};
+pub use tracer::PathTracer;

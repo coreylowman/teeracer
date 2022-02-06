@@ -1,15 +1,39 @@
-use crate::data::{Dielectric, DiffuseLight, Hit, Lambertian, Material, Metal, Ray, Three};
-use crate::scene::Scene;
-use rand::prelude::Rng;
+use crate::data::{CanHit, Dielectric, DiffuseLight, Hit, Lambertian, Material, Metal, Ray, Three};
+use crate::scene::{Scene, SceneTracer};
+use rand::Rng;
 use rand_distr::{Distribution, UnitBall, UnitSphere};
 
-pub trait Tracer {
-    fn trace<R: Rng>(&self, ray: Ray, rng: &mut R) -> Three<f64>;
-}
+#[derive(Default, Debug, Clone, Copy)]
+pub struct PathTracer;
 
-pub struct PathTracer {
-    scene: Scene,
-    depth: usize,
+impl SceneTracer for PathTracer {
+    fn trace<R>(&self, mut ray: Ray, scene: &Scene, depth: usize, rng: &mut R) -> Option<Three<f64>>
+    where
+        R: Rng,
+    {
+        let mut color: Three<f64> = 1.0.into();
+        for _ in 0..depth {
+            let opt_hit = scene.hit_by(&ray, 1e-3, f64::INFINITY);
+            if opt_hit.is_none() {
+                return None;
+            }
+
+            let hit = opt_hit.unwrap();
+            let obj_idx = hit.sub_object_index.unwrap();
+            let material = scene.material_for(obj_idx);
+
+            let interaction = material.interact(&ray, &hit, rng);
+            color *= interaction.attenuation;
+            match interaction.light_behavior {
+                LightBehavior::Scatter { direction } => {
+                    ray.origin = hit.position;
+                    ray.direction = direction;
+                }
+                LightBehavior::Absorb => return Some(color),
+            }
+        }
+        None
+    }
 }
 
 enum LightBehavior {
@@ -20,35 +44,6 @@ enum LightBehavior {
 struct MaterialInteraction {
     attenuation: Three<f64>,
     light_behavior: LightBehavior,
-}
-
-impl PathTracer {
-    pub fn new(scene: Scene, depth: usize) -> Self {
-        Self { scene, depth }
-    }
-}
-
-impl Tracer for PathTracer {
-    fn trace<R: Rng>(&self, mut ray: Ray, rng: &mut R) -> Three<f64> {
-        let mut color: Three<f64> = 1.0.into();
-        for _ in 0..self.depth {
-            match self.scene.cast(&ray) {
-                Some((hit, material)) => {
-                    let interaction = material.interact(&ray, &hit, rng);
-                    color *= interaction.attenuation;
-                    match interaction.light_behavior {
-                        LightBehavior::Scatter { direction } => {
-                            ray.origin = hit.position;
-                            ray.direction = direction;
-                        }
-                        LightBehavior::Absorb => return color,
-                    }
-                }
-                None => return 0.0.into(),
-            };
-        }
-        0.0.into()
-    }
 }
 
 impl Material {
