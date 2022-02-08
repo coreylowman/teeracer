@@ -4,8 +4,11 @@ use crate::{
 };
 use rand::Rng;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MaterialIdx(usize);
+pub trait SceneTracer {
+    fn trace<R>(&self, ray: Ray, scene: &Scene, depth: usize, rng: &mut R) -> Option<Three<f64>>
+    where
+        R: Rng;
+}
 
 pub struct Scene {
     objects: Vec<Object>,
@@ -55,8 +58,5 @@ impl CanHit<Scene> for Ray {
     }
 }
 
-pub trait SceneTracer {
-    fn trace<R>(&self, ray: Ray, scene: &Scene, depth: usize, rng: &mut R) -> Option<Three<f64>>
-    where
-        R: Rng;
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MaterialIdx(usize);
