@@ -5,14 +5,26 @@ fn build_scene() -> Scene {
     let mut scene = Scene::new();
 
     // materials
-    let white_lam = scene.add_material(Lambertian::new(1.0.into()));
-    let green_metal = scene.add_material(Metal::new((0.25, 1.0, 0.25).into()));
-    let red_lam = scene.add_material(Lambertian::new((1.0, 0.25, 0.25).into()));
-    let blue_lam = scene.add_material(Lambertian::new((0.25, 0.25, 1.0).into()));
-    let water = scene.add_material(IndexOfRefraction::Water);
-    let crown_glass = scene.add_material(IndexOfRefraction::CrownGlass);
-    let diamond = scene.add_material(IndexOfRefraction::Diamond);
-    let white_light = scene.add_material(DiffuseLight::new(1.0.into(), 5.0));
+    let white_lam = scene.add_material(Lambertian {
+        rgb: Three::new(1.0, 1.0, 1.0),
+    });
+    let green_metal = scene.add_material(Metal {
+        rgb: Three::new(0.25, 1.0, 0.25),
+        fuzz: None,
+    });
+    let red_lam = scene.add_material(Lambertian {
+        rgb: Three::new(1.0, 0.25, 0.25),
+    });
+    let blue_lam = scene.add_material(Lambertian {
+        rgb: Three::new(0.25, 0.25, 1.0),
+    });
+    let water = scene.add_material(Dielectric { ior: 1.33 });
+    let crown_glass = scene.add_material(Dielectric { ior: 1.52 });
+    let diamond = scene.add_material(Dielectric { ior: 2.417 });
+    let white_light = scene.add_material(DiffuseLight {
+        rgb: Three::new(1.0, 1.0, 1.0),
+        power: 5.0,
+    });
 
     // lights
     scene.add_object(Sphere::new((0.0, 3.0, -3.0), 1.0), white_light);

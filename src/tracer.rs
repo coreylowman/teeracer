@@ -14,36 +14,33 @@ impl SceneTracer for PathTracer {
         let mut color: Three<f64> = 1.0.into();
         for _ in 0..depth {
             let opt_hit = scene.hit_by(&ray, 1e-3, f64::INFINITY);
-            if opt_hit.is_none() {
-                return None;
-            }
-
-            let hit = opt_hit.unwrap();
-            let obj_idx = hit.sub_object_index.unwrap();
-            let material = scene.material_for(obj_idx);
-
-            let interaction = material.interact(&ray, &hit, rng);
-            color *= interaction.attenuation;
-            match interaction.light_behavior {
-                LightBehavior::Scatter { direction } => {
-                    ray.origin = hit.position;
-                    ray.direction = direction;
+            if let Some(hit) = opt_hit {
+                let material = scene.material_for(hit.object_index);
+                let interaction = material.interact(&ray, &hit, rng);
+                color *= interaction.attenuation;
+                match interaction.light_behavior {
+                    LightBehavior::Scatter { direction } => {
+                        ray.origin = hit.position;
+                        ray.direction = direction;
+                    }
+                    LightBehavior::Absorb => return Some(color),
                 }
-                LightBehavior::Absorb => return Some(color),
+            } else {
+                return None;
             }
         }
         None
     }
 }
 
-enum LightBehavior {
-    Scatter { direction: Three<f64> },
-    Absorb,
-}
-
 struct MaterialInteraction {
     attenuation: Three<f64>,
     light_behavior: LightBehavior,
+}
+
+enum LightBehavior {
+    Scatter { direction: Three<f64> },
+    Absorb,
 }
 
 impl Material {
@@ -59,7 +56,7 @@ impl Material {
 
 impl Lambertian {
     fn interact<R: Rng>(&self, _ray: &Ray, hit: &Hit, rng: &mut R) -> MaterialInteraction {
-        let mut noise = random_unit(rng);
+        let mut noise = Three::from(UnitSphere.sample(rng));
         noise *= noise.dot(&hit.normal).signum(); // NOTE: make noise face in same direction as normal
         let direction = (&hit.normal + &noise).normalized();
         let cos_theta = direction.dot(&hit.normal).max(0.0);
@@ -74,7 +71,7 @@ impl Metal {
     fn interact<R: Rng>(&self, ray: &Ray, hit: &Hit, rng: &mut R) -> MaterialInteraction {
         let mut direction = reflect(&ray.direction, &hit.normal);
         if let Some(value) = self.fuzz {
-            let mut noise = random_unit_in(rng);
+            let mut noise = Three::from(UnitBall.sample(rng));
             noise *= noise.dot(&hit.normal).signum() * value;
             direction = (&direction + &noise).normalized();
         }
@@ -90,11 +87,7 @@ impl Dielectric {
         let cos_theta = ray.direction.dot(&hit.normal);
         let exiting = cos_theta > 0.0;
         let outward_normal = if exiting { -hit.normal } else { hit.normal };
-        let ratio = if exiting {
-            self.ior.value()
-        } else {
-            self.ior.value().recip()
-        };
+        let ratio = if exiting { self.ior } else { self.ior.recip() };
         let cos_theta = cos_theta.abs();
         let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
 
@@ -129,12 +122,4 @@ impl DiffuseLight {
 
 fn reflect(d: &Three<f64>, n: &Three<f64>) -> Three<f64> {
     d - &(n * (d.dot(&n) * 2.0))
-}
-
-fn random_unit<R: Rng>(rng: &mut R) -> Three<f64> {
-    UnitSphere.sample(rng).into()
-}
-
-fn random_unit_in<R: Rng>(rng: &mut R) -> Three<f64> {
-    UnitBall.sample(rng).into()
 }

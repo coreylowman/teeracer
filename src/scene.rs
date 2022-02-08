@@ -45,7 +45,7 @@ impl CanHit for Scene {
         for (i, obj) in self.objects.iter().enumerate() {
             if let Some(mut hit) = obj.hit_by(&ray, t_min, t_max) {
                 if hit.distance < t_max {
-                    hit.sub_object_index = Some(i);
+                    hit.object_index = i;
                     opt_hit = Some(hit);
                     t_max = hit.distance;
                 }

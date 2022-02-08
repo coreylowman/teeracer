@@ -70,7 +70,7 @@ impl CanHit for Triangle {
             position,
             distance,
             normal,
-            sub_object_index: None,
+            object_index: 0,
         })
     }
 }
