@@ -37,35 +37,35 @@ impl Triangle {
     }
 }
 
-impl CanHit for Triangle {
+impl CanHit<Triangle> for Ray {
     // source: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
-    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
-        let pvec = ray.direction.cross(&self.v02);
+    fn shoot_at(&self, triangle: &Triangle, t_min: f64, t_max: f64) -> Option<Hit> {
+        let pvec = self.direction.cross(&triangle.v02);
 
-        let determinant = self.v01.dot(&pvec);
+        let determinant = triangle.v01.dot(&pvec);
         if determinant.abs() < 1e-3 {
             // ray and triangle are parallel
             return None;
         }
 
-        let tvec = ray.origin - self.v0;
+        let tvec = self.origin - triangle.v0;
         let u = tvec.dot(&pvec) / determinant;
         if u < 0.0 || u > 1.0 {
             return None;
         }
 
-        let qvec = tvec.cross(&self.v01);
-        let v = ray.direction.dot(&qvec) / determinant;
+        let qvec = tvec.cross(&triangle.v01);
+        let v = self.direction.dot(&qvec) / determinant;
         if v < 0.0 || u + v > 1.0 {
             return None;
         }
 
-        let distance = self.v02.dot(&qvec) / determinant;
+        let distance = triangle.v02.dot(&qvec) / determinant;
         if distance < t_min || distance >= t_max {
             return None;
         }
-        let position = ray.origin + ray.direction * distance;
-        let normal = self.normal();
+        let position = self.origin + self.direction * distance;
+        let normal = triangle.normal();
         Some(Hit {
             position,
             distance,

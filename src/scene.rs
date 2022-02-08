@@ -39,11 +39,11 @@ impl Scene {
     }
 }
 
-impl CanHit for Scene {
-    fn hit_by(&self, ray: &Ray, t_min: f64, mut t_max: f64) -> Option<Hit> {
+impl CanHit<Scene> for Ray {
+    fn shoot_at(&self, scene: &Scene, t_min: f64, mut t_max: f64) -> Option<Hit> {
         let mut opt_hit = None;
-        for (i, obj) in self.objects.iter().enumerate() {
-            if let Some(mut hit) = obj.hit_by(&ray, t_min, t_max) {
+        for (i, obj) in scene.objects.iter().enumerate() {
+            if let Some(mut hit) = self.shoot_at(obj, t_min, t_max) {
                 if hit.distance < t_max {
                     hit.object_index = i;
                     opt_hit = Some(hit);

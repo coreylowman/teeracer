@@ -13,7 +13,7 @@ impl SceneTracer for PathTracer {
     {
         let mut color: Three<f64> = 1.0.into();
         for _ in 0..depth {
-            let opt_hit = scene.hit_by(&ray, 1e-3, f64::INFINITY);
+            let opt_hit = ray.shoot_at(scene, 1e-3, f64::INFINITY);
             if let Some(hit) = opt_hit {
                 let material = scene.material_for(hit.object_index);
                 let interaction = material.interact(&ray, &hit, rng);

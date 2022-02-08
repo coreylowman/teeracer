@@ -14,12 +14,12 @@ impl Sphere {
     }
 }
 
-impl CanHit for Sphere {
-    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
-        let center_to_origin = &ray.origin - &self.center;
-        let a: f64 = 1.0; // ray.direction.length_squared();
-        let half_b = center_to_origin.dot(&ray.direction);
-        let c = center_to_origin.length_squared() - self.radius_squared;
+impl CanHit<Sphere> for Ray {
+    fn shoot_at(&self, sphere: &Sphere, t_min: f64, t_max: f64) -> Option<Hit> {
+        let center_to_origin = &self.origin - &sphere.center;
+        let a: f64 = 1.0; // self.direction.length_squared();
+        let half_b = center_to_origin.dot(&self.direction);
+        let c = center_to_origin.length_squared() - sphere.radius_squared;
 
         let discriminant = half_b.powi(2) - a * c;
         if discriminant < 0.0 {
@@ -30,9 +30,9 @@ impl CanHit for Sphere {
         let near_root = Some((-half_b - sqrtd) * a.recip()).filter(|&v| t_min <= v && v < t_max);
         let far_root = Some((-half_b + sqrtd) * a.recip()).filter(|&v| t_min <= v && v < t_max);
         near_root.or(far_root).map(|distance| {
-            let offset = &ray.direction * distance;
-            let position = &ray.origin + &offset;
-            let normal = (&position - &self.center).normalized();
+            let offset = &self.direction * distance;
+            let position = &self.origin + &offset;
+            let normal = (&position - &sphere.center).normalized();
             Hit {
                 position,
                 distance,

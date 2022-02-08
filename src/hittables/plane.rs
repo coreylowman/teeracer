@@ -18,19 +18,19 @@ impl Plane {
     }
 }
 
-impl CanHit for Plane {
-    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
-        let denom = self.normal.dot(&ray.direction);
-        let origin_to_center = &self.center - &ray.origin;
-        Some(origin_to_center.dot(&self.normal) / denom)
+impl CanHit<Plane> for Ray {
+    fn shoot_at(&self, plane: &Plane, t_min: f64, t_max: f64) -> Option<Hit> {
+        let denom = plane.normal.dot(&self.direction);
+        let origin_to_center = &plane.center - &self.origin;
+        Some(origin_to_center.dot(&plane.normal) / denom)
             .filter(|&v| v.is_finite() && t_min <= v && v < t_max)
             .map(|distance| {
-                let offset = &ray.direction * distance;
-                let position = &ray.origin + &offset;
+                let offset = &self.direction * distance;
+                let position = &self.origin + &offset;
                 Hit {
                     position,
                     distance,
-                    normal: self.normal,
+                    normal: plane.normal,
                     object_index: 0,
                 }
             })

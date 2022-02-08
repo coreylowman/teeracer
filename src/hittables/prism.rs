@@ -54,11 +54,11 @@ impl Prism {
     }
 }
 
-impl CanHit for Prism {
-    fn hit_by(&self, ray: &Ray, t_min: f64, mut t_max: f64) -> Option<Hit> {
+impl CanHit<Prism> for Ray {
+    fn shoot_at(&self, prism: &Prism, t_min: f64, mut t_max: f64) -> Option<Hit> {
         let mut opt_hit = None;
-        for (i, obj) in self.triangles.iter().enumerate() {
-            if let Some(mut hit) = obj.hit_by(&ray, t_min, t_max) {
+        for (i, obj) in prism.triangles.iter().enumerate() {
+            if let Some(mut hit) = self.shoot_at(obj, t_min, t_max) {
                 if hit.distance < t_max {
                     hit.object_index = i;
                     opt_hit = Some(hit);

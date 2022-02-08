@@ -51,8 +51,8 @@ pub struct Hit {
     pub object_index: usize,
 }
 
-pub trait CanHit {
-    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit>;
+pub trait CanHit<T> {
+    fn shoot_at(&self, obj: &T, t_min: f64, t_max: f64) -> Option<Hit>;
 }
 
 pub struct Camera {

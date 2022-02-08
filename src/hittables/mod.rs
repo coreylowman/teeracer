@@ -20,14 +20,14 @@ pub enum Object {
     Prism(Prism),
 }
 
-impl CanHit for Object {
-    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
-        match self {
-            Object::Plane(obj) => obj.hit_by(ray, t_min, t_max),
-            Object::Sphere(obj) => obj.hit_by(ray, t_min, t_max),
-            Object::Rectangle(obj) => obj.hit_by(ray, t_min, t_max),
-            Object::Triangle(obj) => obj.hit_by(ray, t_min, t_max),
-            Object::Prism(obj) => obj.hit_by(ray, t_min, t_max),
+impl CanHit<Object> for Ray {
+    fn shoot_at(&self, obj: &Object, t_min: f64, t_max: f64) -> Option<Hit> {
+        match obj {
+            Object::Plane(obj) => self.shoot_at(obj, t_min, t_max),
+            Object::Sphere(obj) => self.shoot_at(obj, t_min, t_max),
+            Object::Rectangle(obj) => self.shoot_at(obj, t_min, t_max),
+            Object::Triangle(obj) => self.shoot_at(obj, t_min, t_max),
+            Object::Prism(obj) => self.shoot_at(obj, t_min, t_max),
         }
     }
 }

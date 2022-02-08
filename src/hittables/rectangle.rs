@@ -24,11 +24,10 @@ impl Rectangle {
     }
 }
 
-impl CanHit for Rectangle {
-    fn hit_by(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
-        self.plane
-            .hit_by(ray, t_min, t_max)
-            .filter(|hit| hit.position.between(&self.min, &self.max))
+impl CanHit<Rectangle> for Ray {
+    fn shoot_at(&self, rectangle: &Rectangle, t_min: f64, t_max: f64) -> Option<Hit> {
+        self.shoot_at(&rectangle.plane, t_min, t_max)
+            .filter(|hit| hit.position.between(&rectangle.min, &rectangle.max))
     }
 }
 
