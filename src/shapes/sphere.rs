@@ -6,10 +6,17 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new<I: Into<Three<f64>>>(center: I, radius: f64) -> Self {
+    pub fn unit_at(x: f64, y: f64, z: f64) -> Self {
         Self {
-            center: center.into(),
-            radius_squared: radius.powi(2),
+            center: Three::new(x, y, z),
+            radius_squared: 1.0,
+        }
+    }
+
+    pub fn scaled(&self, scalar: f64) -> Self {
+        Self {
+            center: self.center,
+            radius_squared: self.radius_squared * scalar.powi(2),
         }
     }
 }

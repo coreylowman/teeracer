@@ -1,6 +1,6 @@
 use crate::{
     data::{CanHit, Hit, Material, Ray, Three},
-    hittables::Object,
+    shapes::Object,
 };
 use rand::Rng;
 

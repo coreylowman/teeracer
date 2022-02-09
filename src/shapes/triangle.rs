@@ -2,20 +2,13 @@ use crate::data::{CanHit, Hit, Ray, Three};
 
 #[derive(Debug, Clone)]
 pub struct Triangle {
-    pub(super) v0: Three<f64>,
-    pub(super) v01: Three<f64>,
-    pub(super) v02: Three<f64>,
+    v0: Three<f64>,
+    v01: Three<f64>,
+    v02: Three<f64>,
 }
 
 impl Triangle {
-    pub fn new<I: Into<Three<f64>>>(into_v0: I, into_v1: I, into_v2: I) -> Self {
-        let v0 = into_v0.into();
-        let v1 = into_v1.into();
-        let v2 = into_v2.into();
-        Self::from_points(v0, v1, v2)
-    }
-
-    pub fn from_points(v0: Three<f64>, v1: Three<f64>, v2: Three<f64>) -> Self {
+    pub fn new(v0: Three<f64>, v1: Three<f64>, v2: Three<f64>) -> Self {
         Self {
             v0,
             v01: v1 - v0,
@@ -23,17 +16,45 @@ impl Triangle {
         }
     }
 
-    pub fn normal(&self) -> Three<f64> {
-        self.v01.cross(&self.v02).normalized()
+    /// Constructs an equialateral triangle around the origin with the normal facing the positive z axis
+    /// NOTE: The center of the bottom side of the triangle is the origin.
+    pub fn facing_pos_z() -> Self {
+        Self::new(
+            Three::new(-0.5, 0.0, 0.0),
+            Three::new(0.5, 0.0, 0.0),
+            Three::new(0.0, 3.0f64.sqrt() / 2.0, 0.0),
+        )
     }
 
-    pub fn rotated_around(&self, origin: &Three<f64>, axis: &Three<f64>, angle: f64) -> Self {
-        let v1 = self.v01 + self.v0;
-        let v2 = self.v02 + self.v0;
-        let v0 = (self.v0 - origin).rotate(axis, angle) + origin;
-        let v1 = (v1 - origin).rotate(axis, angle) + origin;
-        let v2 = (v2 - origin).rotate(axis, angle) + origin;
-        Self::from_points(v0, v1, v2)
+    pub fn shifted(&self, offset: Three<f64>) -> Self {
+        Self {
+            v0: self.v0 + offset,
+            v01: self.v01,
+            v02: self.v02,
+        }
+    }
+
+    pub fn scaled(&self, scalar: f64) -> Self {
+        let (v0, v1, v2) = self.vertices();
+        Self::new(v0 * scalar, v1 * scalar, v2 * scalar)
+    }
+
+    pub fn rotated_around(&self, axis: &Three<f64>, angle: f64) -> Self {
+        let (v0, v1, v2) = self.vertices();
+        let v0 = v0.rotate(axis, angle);
+        let v1 = v1.rotate(axis, angle);
+        let v2 = v2.rotate(axis, angle);
+        Self::new(v0, v1, v2)
+    }
+}
+
+impl Triangle {
+    pub fn vertices(&self) -> (Three<f64>, Three<f64>, Three<f64>) {
+        (self.v0, self.v01 + self.v0, self.v02 + self.v0)
+    }
+
+    pub fn normal(&self) -> Three<f64> {
+        self.v01.cross(&self.v02).normalized()
     }
 }
 

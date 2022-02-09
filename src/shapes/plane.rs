@@ -1,19 +1,46 @@
 use crate::data::{CanHit, Hit, Ray, Three};
 
 pub struct Plane {
-    pub(super) center: Three<f64>,
-    pub(super) normal: Three<f64>,
+    center: Three<f64>,
+    normal: Three<f64>,
 }
 
 impl Plane {
-    pub fn new<I: Into<Three<f64>>>(center: I, normal: I) -> Self {
-        Self::raw(center.into(), normal.into())
+    pub fn facing_pos_x() -> Self {
+        Self::new(Three::new(1.0, 0.0, 0.0))
     }
 
-    pub fn raw(center: Three<f64>, normal: Three<f64>) -> Self {
+    pub fn facing_neg_x() -> Self {
+        Self::new(Three::new(-1.0, 0.0, 0.0))
+    }
+
+    pub fn facing_pos_y() -> Self {
+        Self::new(Three::new(0.0, 1.0, 0.0))
+    }
+
+    pub fn facing_neg_y() -> Self {
+        Self::new(Three::new(0.0, -1.0, 0.0))
+    }
+
+    pub fn facing_pos_z() -> Self {
+        Self::new(Three::new(0.0, 0.0, 1.0))
+    }
+
+    pub fn facing_neg_z() -> Self {
+        Self::new(Three::new(0.0, 0.0, -1.0))
+    }
+
+    pub fn new(normal: Three<f64>) -> Self {
         Self {
-            center,
+            center: Three::new(0.0, 0.0, 0.0),
             normal: normal.normalized(),
+        }
+    }
+
+    pub fn shifted_back(&self, dist: f64) -> Self {
+        Self {
+            center: self.center - self.normal * dist,
+            normal: self.normal,
         }
     }
 }

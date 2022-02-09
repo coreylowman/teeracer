@@ -335,6 +335,10 @@ where
 }
 
 impl Three<f64> {
+    pub const UNIT_X: Self = Three::new(1.0, 0.0, 0.0);
+    pub const UNIT_Y: Self = Three::new(0.0, 1.0, 0.0);
+    pub const UNIT_Z: Self = Three::new(0.0, 0.0, 1.0);
+
     pub fn min(&self, other: &Self) -> Self {
         Three::new(
             self.x.min(other.x),
@@ -357,6 +361,14 @@ impl Three<f64> {
         let cos_theta = theta.cos();
         self * cos_theta
             + (self.cross(axis) * sin_theta + axis * (self.dot(axis) * (1.0 - cos_theta)))
+    }
+}
+
+impl Lambertian {
+    pub fn rgb(r: f64, g: f64, b: f64) -> Self {
+        Self {
+            rgb: Three::new(r, g, b),
+        }
     }
 }
 
