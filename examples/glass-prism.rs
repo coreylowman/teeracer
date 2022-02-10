@@ -37,12 +37,14 @@ fn build_scene() -> Scene {
 }
 
 fn main() -> Result<(), image::error::ImageError> {
-    let camera = Camera {
-        position: Three::new(0.0, 0.0, 5.0),
-        width: 800,
-        height: 600,
-        fov: 45.0,
-    };
+    let camera = Camera::new(
+        FieldOfView::Degrees(45.0),
+        ImageShape {
+            width: 800,
+            height: 600,
+        },
+    )
+    .at(0.0, 0.0, 5.0);
     let scene = build_scene();
     render::<PathTracer, XorShiftRng>(scene, camera, 25, 1000).save("glass-prism.png")?;
     Ok(())

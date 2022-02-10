@@ -396,17 +396,56 @@ impl Into<Material> for DiffuseLight {
     }
 }
 
+impl LinearTransform {
+    pub fn apply(&self, x: f64) -> f64 {
+        self.scale * x + self.offset
+    }
+}
+
+impl FieldOfView {
+    pub fn radians(self) -> f64 {
+        match self {
+            Self::Degrees(v) => v.to_radians(),
+            Self::Radians(v) => v,
+        }
+    }
+}
+
 impl Camera {
-    pub fn empty_image(&self) -> Vec<Three<f64>> {
+    pub fn new(fov: FieldOfView, image_shape: ImageShape) -> Self {
+        let tan_half_fov = (fov.radians() / 2.0).tan();
+        let aspect_ratio = image_shape.width as f64 / image_shape.height as f64;
+        Self {
+            position: Three::new(0.0, 0.0, 0.0),
+            x_transform: LinearTransform {
+                // (2.0 * x / width - 1.0) * aspect_ratio & tan_half_fov
+                scale: 2.0 * aspect_ratio * tan_half_fov / image_shape.width as f64,
+                offset: -aspect_ratio * tan_half_fov,
+            },
+            y_transform: LinearTransform {
+                // (1.0 - 2.0 * y / height) * tanh_half_fov
+                scale: -2.0 * tan_half_fov / image_shape.height as f64,
+                offset: tan_half_fov,
+            },
+            width: image_shape.width,
+            height: image_shape.height,
+        }
+    }
+
+    pub fn at(&self, x: f64, y: f64, z: f64) -> Self {
+        let mut p = self.clone();
+        p.position = Three::new(x, y, z);
+        p
+    }
+
+    pub(crate) fn empty_image(&self) -> Vec<Three<f64>> {
         vec![Three::new(0.0, 0.0, 0.0); self.width * self.height]
     }
 
-    pub fn ray_through(&self, x_screen: f64, y_screen: f64) -> Ray {
-        let tan_half_fov = (self.fov.to_radians() / 2.0).tan();
-        let aspect_ratio = (self.width as f64) / (self.height as f64);
-        let x_world = ((x_screen * 2.0 / self.width as f64) - 1.0) * aspect_ratio * tan_half_fov;
-        let y_world = ((y_screen * 2.0 / self.height as f64) - 1.0) * tan_half_fov;
-        let direction = Three::new(x_world, -y_world, -1.0).normalized();
+    pub(crate) fn ray_through(&self, x_screen: f64, y_screen: f64) -> Ray {
+        let x_world = self.x_transform.apply(x_screen);
+        let y_world = self.y_transform.apply(y_screen);
+        let direction = Three::new(x_world, y_world, -1.0).normalized();
         Ray {
             origin: self.position,
             direction,

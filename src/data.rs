@@ -55,10 +55,27 @@ pub trait CanHit<T> {
     fn shoot_at(&self, obj: &T, t_min: f64, t_max: f64) -> Option<Hit>;
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct Camera {
-    pub position: Three<f64>,
-    pub fov: f64,
+pub enum FieldOfView {
+    Degrees(f64),
+    Radians(f64),
+}
+
+pub struct ImageShape {
     pub width: usize,
     pub height: usize,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct LinearTransform {
+    pub scale: f64,
+    pub offset: f64,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct Camera {
+    pub(crate) position: Three<f64>,
+    pub(crate) x_transform: LinearTransform,
+    pub(crate) y_transform: LinearTransform,
+    pub(crate) width: usize,
+    pub(crate) height: usize,
 }
