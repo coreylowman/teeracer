@@ -7,7 +7,7 @@ use rand_distr::{Distribution, UnitBall, UnitSphere};
 pub struct PathTracer;
 
 impl SceneTracer for PathTracer {
-    fn trace<R>(&self, mut ray: Ray, scene: &Scene, depth: usize, rng: &mut R) -> Option<Three<f64>>
+    fn trace<R>(mut ray: Ray, scene: &Scene, depth: usize, rng: &mut R) -> Option<Three<f64>>
     where
         R: Rng,
     {

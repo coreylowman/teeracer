@@ -55,6 +55,7 @@ pub trait CanHit<T> {
     fn shoot_at(&self, obj: &T, t_min: f64, t_max: f64) -> Option<Hit>;
 }
 
+#[derive(Copy, Clone, Debug)]
 pub struct Camera {
     pub position: Three<f64>,
     pub fov: f64,

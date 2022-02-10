@@ -402,15 +402,11 @@ impl Camera {
     }
 
     pub fn ray_through(&self, x_screen: f64, y_screen: f64) -> Ray {
-        const FORWARD: Three<f64> = Three::new(0.0, 0.0, -1.0);
-        const UP: Three<f64> = Three::new(0.0, 1.0, 0.0);
-        const RIGHT: Three<f64> = Three::new(1.0, 0.0, 0.0);
-
-        let fov_adjustment = (self.fov.to_radians() / 2.0).tan();
+        let tan_half_fov = (self.fov.to_radians() / 2.0).tan();
         let aspect_ratio = (self.width as f64) / (self.height as f64);
-        let x_world = (2.0 * (x_screen / self.width as f64) - 1.0) * aspect_ratio * fov_adjustment;
-        let y_world = (-(2.0 * (y_screen / self.height as f64) - 1.0)) * fov_adjustment;
-        let direction = (RIGHT * x_world + UP * y_world + FORWARD).normalized();
+        let x_world = ((x_screen * 2.0 / self.width as f64) - 1.0) * aspect_ratio * tan_half_fov;
+        let y_world = ((y_screen * 2.0 / self.height as f64) - 1.0) * tan_half_fov;
+        let direction = Three::new(x_world, -y_world, -1.0).normalized();
         Ray {
             origin: self.position,
             direction,

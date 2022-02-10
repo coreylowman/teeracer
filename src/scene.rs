@@ -5,7 +5,7 @@ use crate::{
 use rand::Rng;
 
 pub trait SceneTracer {
-    fn trace<R>(&self, ray: Ray, scene: &Scene, depth: usize, rng: &mut R) -> Option<Three<f64>>
+    fn trace<R>(ray: Ray, scene: &Scene, depth: usize, rng: &mut R) -> Option<Three<f64>>
     where
         R: Rng;
 }
