@@ -42,7 +42,7 @@ fn main() -> Result<(), image::error::ImageError> {
     scene.add_object(Plane::facing_neg_y().shifted_back(4.0), white_lam); // TOP
     scene.add_object(Plane::facing_pos_z().shifted_back(7.0), violet_lam); // FRONT
 
-    render::<PathTracer, f32, XorShiftRng>(scene, camera, 50, 1000).save("glass-prism.png")?;
+    render::<PathTracer, f32, XorShiftRng>(scene, camera, 10, 1000).save("glass-prism.png")?;
 
     Ok(())
 }

@@ -48,7 +48,7 @@ fn main() -> Result<(), image::error::ImageError> {
     scene.add_object(Plane::facing_pos_z().shifted_back(7.0), white_lam); // FRONT
     scene.add_object(Plane::facing_neg_z().shifted_back(7.0), white_lam); // BACK
 
-    render::<PathTracer, f32, XorShiftRng>(scene, camera, 50, 1000).save("spheres.png")?;
+    render::<PathTracer, f32, XorShiftRng>(scene, camera, 10, 1000).save("spheres.png")?;
 
     Ok(())
 }
