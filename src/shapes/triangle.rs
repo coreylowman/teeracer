@@ -1,14 +1,18 @@
 use crate::data::{CanHit, Hit, Ray, Three};
+use num_traits::Float;
 
 #[derive(Debug, Clone)]
-pub struct Triangle {
-    v0: Three<f64>,
-    v01: Three<f64>,
-    v02: Three<f64>,
+pub struct Triangle<F> {
+    v0: Three<F>,
+    v01: Three<F>,
+    v02: Three<F>,
 }
 
-impl Triangle {
-    pub fn new(v0: Three<f64>, v1: Three<f64>, v2: Three<f64>) -> Self {
+impl<F> Triangle<F>
+where
+    F: Float,
+{
+    pub fn new(v0: Three<F>, v1: Three<F>, v2: Three<F>) -> Self {
         Self {
             v0,
             v01: v1 - v0,
@@ -20,13 +24,17 @@ impl Triangle {
     /// NOTE: The center of the bottom side of the triangle is the origin.
     pub fn facing_pos_z() -> Self {
         Self::new(
-            Three::new(-0.5, 0.0, 0.0),
-            Three::new(0.5, 0.0, 0.0),
-            Three::new(0.0, 3.0f64.sqrt() / 2.0, 0.0),
+            Three::new(F::from(-0.5f64).unwrap(), F::zero(), F::zero()),
+            Three::new(F::from(0.5f64).unwrap(), F::zero(), F::zero()),
+            Three::new(
+                F::zero(),
+                F::from(3.0f64.sqrt() / 2.0f64).unwrap(),
+                F::zero(),
+            ),
         )
     }
 
-    pub fn shifted(&self, offset: Three<f64>) -> Self {
+    pub fn shifted(&self, offset: Three<F>) -> Self {
         Self {
             v0: self.v0 + offset,
             v01: self.v01,
@@ -34,50 +42,51 @@ impl Triangle {
         }
     }
 
-    pub fn scaled(&self, scalar: f64) -> Self {
+    pub fn scaled(&self, scalar: F) -> Self {
         let (v0, v1, v2) = self.vertices();
         Self::new(v0 * scalar, v1 * scalar, v2 * scalar)
     }
 
-    pub fn rotated_around(&self, axis: &Three<f64>, angle: f64) -> Self {
+    pub fn rotated_around(&self, axis: &Three<F>, angle: F) -> Self {
         let (v0, v1, v2) = self.vertices();
         let v0 = v0.rotate(axis, angle);
         let v1 = v1.rotate(axis, angle);
         let v2 = v2.rotate(axis, angle);
         Self::new(v0, v1, v2)
     }
-}
 
-impl Triangle {
-    pub fn vertices(&self) -> (Three<f64>, Three<f64>, Three<f64>) {
+    pub fn vertices(&self) -> (Three<F>, Three<F>, Three<F>) {
         (self.v0, self.v01 + self.v0, self.v02 + self.v0)
     }
 
-    pub fn normal(&self) -> Three<f64> {
+    pub fn normal(&self) -> Three<F> {
         self.v01.cross(&self.v02).normalized()
     }
 }
 
-impl CanHit<Triangle> for Ray {
+impl<F> CanHit<Triangle<F>, F> for Ray<F>
+where
+    F: Float,
+{
     // source: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
-    fn shoot_at(&self, triangle: &Triangle, t_min: f64, t_max: f64) -> Option<Hit> {
+    fn shoot_at(&self, triangle: &Triangle<F>, t_min: F, t_max: F) -> Option<Hit<F>> {
         let pvec = self.direction.cross(&triangle.v02);
 
         let determinant = triangle.v01.dot(&pvec);
-        if determinant.abs() < 1e-3 {
+        if determinant.abs() < F::from(1e-3f64).unwrap() {
             // ray and triangle are parallel
             return None;
         }
 
         let tvec = self.origin - triangle.v0;
         let u = tvec.dot(&pvec) / determinant;
-        if u < 0.0 || u > 1.0 {
+        if u < F::zero() || u > F::one() {
             return None;
         }
 
         let qvec = tvec.cross(&triangle.v01);
         let v = self.direction.dot(&qvec) / determinant;
-        if v < 0.0 || u + v > 1.0 {
+        if v < F::zero() || u + v > F::one() {
             return None;
         }
 

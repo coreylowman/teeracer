@@ -9,16 +9,20 @@ pub use sphere::Sphere;
 pub use triangle::Triangle;
 
 use crate::data::{CanHit, Hit, Ray};
+use num_traits::Float;
 
-pub enum Object {
-    Plane(Plane),
-    Sphere(Sphere),
-    Triangle(Triangle),
-    Prism(Prism),
+pub enum Object<F> {
+    Plane(Plane<F>),
+    Sphere(Sphere<F>),
+    Triangle(Triangle<F>),
+    Prism(Prism<F>),
 }
 
-impl CanHit<Object> for Ray {
-    fn shoot_at(&self, obj: &Object, t_min: f64, t_max: f64) -> Option<Hit> {
+impl<F> CanHit<Object<F>, F> for Ray<F>
+where
+    F: Float,
+{
+    fn shoot_at(&self, obj: &Object<F>, t_min: F, t_max: F) -> Option<Hit<F>> {
         match obj {
             Object::Plane(obj) => self.shoot_at(obj, t_min, t_max),
             Object::Sphere(obj) => self.shoot_at(obj, t_min, t_max),
@@ -28,26 +32,26 @@ impl CanHit<Object> for Ray {
     }
 }
 
-impl Into<Object> for Plane {
-    fn into(self) -> Object {
+impl<F> Into<Object<F>> for Plane<F> {
+    fn into(self) -> Object<F> {
         Object::Plane(self)
     }
 }
 
-impl Into<Object> for Sphere {
-    fn into(self) -> Object {
+impl<F> Into<Object<F>> for Sphere<F> {
+    fn into(self) -> Object<F> {
         Object::Sphere(self)
     }
 }
 
-impl Into<Object> for Triangle {
-    fn into(self) -> Object {
+impl<F> Into<Object<F>> for Triangle<F> {
+    fn into(self) -> Object<F> {
         Object::Triangle(self)
     }
 }
 
-impl Into<Object> for Prism {
-    fn into(self) -> Object {
+impl<F> Into<Object<F>> for Prism<F> {
+    fn into(self) -> Object<F> {
         Object::Prism(self)
     }
 }

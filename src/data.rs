@@ -8,56 +8,56 @@ pub struct Three<T> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Lambertian {
-    pub rgb: Three<f64>,
+pub struct Lambertian<F> {
+    pub rgb: Three<F>,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Metal {
-    pub rgb: Three<f64>,
-    pub fuzz: Option<f64>,
+pub struct Metal<F> {
+    pub rgb: Three<F>,
+    pub fuzz: Option<F>,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Dielectric {
-    pub ior: f64,
+pub struct Dielectric<F> {
+    pub ior: F,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct DiffuseLight {
-    pub rgb: Three<f64>,
-    pub power: f64,
+pub struct DiffuseLight<F> {
+    pub rgb: Three<F>,
+    pub power: F,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum Material {
-    Lambertian(Lambertian),
-    Metal(Metal),
-    Dielectric(Dielectric),
-    DiffuseLight(DiffuseLight),
+pub enum Material<F> {
+    Lambertian(Lambertian<F>),
+    Metal(Metal<F>),
+    Dielectric(Dielectric<F>),
+    DiffuseLight(DiffuseLight<F>),
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Ray {
-    pub origin: Three<f64>,
-    pub direction: Three<f64>,
+pub struct Ray<F> {
+    pub origin: Three<F>,
+    pub direction: Three<F>,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Hit {
-    pub position: Three<f64>,
-    pub distance: f64,
-    pub normal: Three<f64>,
+pub struct Hit<F> {
+    pub position: Three<F>,
+    pub distance: F,
+    pub normal: Three<F>,
     pub object_index: usize,
 }
 
-pub trait CanHit<T> {
-    fn shoot_at(&self, obj: &T, t_min: f64, t_max: f64) -> Option<Hit>;
+pub trait CanHit<T, F> {
+    fn shoot_at(&self, obj: &T, t_min: F, t_max: F) -> Option<Hit<F>>;
 }
 
-pub enum FieldOfView {
-    Degrees(f64),
-    Radians(f64),
+pub enum FieldOfView<F> {
+    Degrees(F),
+    Radians(F),
 }
 
 pub struct ImageShape {
@@ -66,16 +66,16 @@ pub struct ImageShape {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct LinearTransform {
-    pub scale: f64,
-    pub offset: f64,
+pub struct LinearTransform<F> {
+    pub scale: F,
+    pub offset: F,
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct Camera {
-    pub(crate) position: Three<f64>,
-    pub(crate) x_transform: LinearTransform,
-    pub(crate) y_transform: LinearTransform,
+pub struct Camera<F> {
+    pub(crate) position: Three<F>,
+    pub(crate) x_transform: LinearTransform<F>,
+    pub(crate) y_transform: LinearTransform<F>,
     pub(crate) width: usize,
     pub(crate) height: usize,
 }

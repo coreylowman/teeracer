@@ -2,21 +2,22 @@ use crate::{
     data::{CanHit, Hit, Material, Ray, Three},
     shapes::Object,
 };
+use num_traits::Float;
 use rand::Rng;
 
-pub trait SceneTracer {
-    fn trace<R>(ray: Ray, scene: &Scene, depth: usize, rng: &mut R) -> Option<Three<f64>>
+pub trait SceneTracer<F> {
+    fn trace<R>(ray: Ray<F>, scene: &Scene<F>, depth: usize, rng: &mut R) -> Option<Three<F>>
     where
         R: Rng;
 }
 
-pub struct Scene {
-    objects: Vec<Object>,
+pub struct Scene<F> {
+    objects: Vec<Object<F>>,
     object_material_idx: Vec<MaterialIdx>,
-    materials: Vec<Material>,
+    materials: Vec<Material<F>>,
 }
 
-impl Scene {
+impl<F> Scene<F> {
     pub fn new() -> Self {
         Self {
             objects: Vec::new(),
@@ -25,25 +26,28 @@ impl Scene {
         }
     }
 
-    pub fn add_material<M: Into<Material>>(&mut self, material: M) -> MaterialIdx {
+    pub fn add_material<M: Into<Material<F>>>(&mut self, material: M) -> MaterialIdx {
         let idx = MaterialIdx(self.materials.len());
         self.materials.push(material.into());
         idx
     }
 
-    pub fn add_object<O: Into<Object>>(&mut self, obj: O, mat_idx: MaterialIdx) {
+    pub fn add_object<O: Into<Object<F>>>(&mut self, obj: O, mat_idx: MaterialIdx) {
         self.objects.push(obj.into());
         self.object_material_idx.push(mat_idx);
     }
 
-    pub fn material_for(&self, obj_idx: usize) -> &Material {
+    pub fn material_for(&self, obj_idx: usize) -> &Material<F> {
         let mat_idx = self.object_material_idx[obj_idx];
         &self.materials[mat_idx.0]
     }
 }
 
-impl CanHit<Scene> for Ray {
-    fn shoot_at(&self, scene: &Scene, t_min: f64, mut t_max: f64) -> Option<Hit> {
+impl<F> CanHit<Scene<F>, F> for Ray<F>
+where
+    F: Float,
+{
+    fn shoot_at(&self, scene: &Scene<F>, t_min: F, mut t_max: F) -> Option<Hit<F>> {
         let mut opt_hit = None;
         for (i, obj) in scene.objects.iter().enumerate() {
             if let Some(mut hit) = self.shoot_at(obj, t_min, t_max) {

@@ -1,7 +1,16 @@
 use rand_xorshift::XorShiftRng;
 use teeracer::*;
 
-fn build_scene() -> Scene {
+fn main() -> Result<(), image::error::ImageError> {
+    let camera = Camera::new(
+        FieldOfView::Degrees(45.0),
+        ImageShape {
+            width: 800,
+            height: 600,
+        },
+    )
+    .at(0.0, 0.0, 5.0);
+
     let mut scene = Scene::new();
 
     // materials
@@ -39,19 +48,7 @@ fn build_scene() -> Scene {
     scene.add_object(Plane::facing_pos_z().shifted_back(7.0), white_lam); // FRONT
     scene.add_object(Plane::facing_neg_z().shifted_back(7.0), white_lam); // BACK
 
-    scene
-}
+    render::<PathTracer, f32, XorShiftRng>(scene, camera, 50, 1000).save("spheres.png")?;
 
-fn main() -> Result<(), image::error::ImageError> {
-    let camera = Camera::new(
-        FieldOfView::Degrees(45.0),
-        ImageShape {
-            width: 800,
-            height: 600,
-        },
-    )
-    .at(0.0, 0.0, 5.0);
-    let scene = build_scene();
-    render::<PathTracer, XorShiftRng>(scene, camera, 25, 1000).save("spheres.png")?;
     Ok(())
 }

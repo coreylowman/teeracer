@@ -1,7 +1,16 @@
 use rand_xorshift::XorShiftRng;
 use teeracer::*;
 
-fn build_scene() -> Scene {
+fn main() -> Result<(), image::error::ImageError> {
+    let camera = Camera::new(
+        FieldOfView::Degrees(45.0),
+        ImageShape {
+            width: 800,
+            height: 600,
+        },
+    )
+    .at(0.0, 0.0, 5.0);
+
     let mut scene = Scene::new();
 
     // materials
@@ -21,7 +30,7 @@ fn build_scene() -> Scene {
     // objects
     scene.add_object(
         Prism::unit_facing_pos_z()
-            .rotated_around(&Three::UNIT_Y, 45.0)
+            .rotated_around(&Three::new(0.0, 1.0, 0.0), 45.0)
             .shifted(Three::new(0.0, -1.5, -2.0)),
         crown_glass,
     );
@@ -33,19 +42,7 @@ fn build_scene() -> Scene {
     scene.add_object(Plane::facing_neg_y().shifted_back(4.0), white_lam); // TOP
     scene.add_object(Plane::facing_pos_z().shifted_back(7.0), violet_lam); // FRONT
 
-    scene
-}
+    render::<PathTracer, f32, XorShiftRng>(scene, camera, 50, 1000).save("glass-prism.png")?;
 
-fn main() -> Result<(), image::error::ImageError> {
-    let camera = Camera::new(
-        FieldOfView::Degrees(45.0),
-        ImageShape {
-            width: 800,
-            height: 600,
-        },
-    )
-    .at(0.0, 0.0, 5.0);
-    let scene = build_scene();
-    render::<PathTracer, XorShiftRng>(scene, camera, 25, 1000).save("glass-prism.png")?;
     Ok(())
 }

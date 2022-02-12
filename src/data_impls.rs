@@ -1,5 +1,5 @@
 use super::data::*;
-use num_traits::Float;
+use num_traits::{cast, Float};
 use std::{
     fmt::Debug,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
@@ -334,76 +334,81 @@ where
     }
 }
 
-impl Three<f64> {
-    pub const UNIT_X: Self = Three::new(1.0, 0.0, 0.0);
-    pub const UNIT_Y: Self = Three::new(0.0, 1.0, 0.0);
-    pub const UNIT_Z: Self = Three::new(0.0, 0.0, 1.0);
-
-    pub fn min(&self, other: &Self) -> Self {
-        Three::new(
-            self.x.min(other.x),
-            self.y.min(other.y),
-            self.z.min(other.z),
-        )
+impl<F> Three<F>
+where
+    F: Float,
+{
+    pub fn zeros() -> Self {
+        Self {
+            x: F::zero(),
+            y: F::zero(),
+            z: F::zero(),
+        }
     }
 
-    pub fn max(&self, other: &Self) -> Self {
-        Three::new(
-            self.x.max(other.x),
-            self.y.max(other.y),
-            self.z.max(other.z),
-        )
+    pub fn ones() -> Self {
+        Self {
+            x: F::one(),
+            y: F::one(),
+            z: F::one(),
+        }
     }
 
-    pub fn rotate(&self, axis: &Self, angle: f64) -> Self {
+    pub fn rotate(&self, axis: &Self, angle: F) -> Self {
         let theta = angle.to_radians();
         let sin_theta = theta.sin();
         let cos_theta = theta.cos();
         self * cos_theta
-            + (self.cross(axis) * sin_theta + axis * (self.dot(axis) * (1.0 - cos_theta)))
+            + (self.cross(axis) * sin_theta + axis * (self.dot(axis) * (F::one() - cos_theta)))
     }
 }
 
-impl Lambertian {
-    pub fn rgb(r: f64, g: f64, b: f64) -> Self {
+impl<F> Lambertian<F> {
+    pub fn rgb(r: F, g: F, b: F) -> Self {
         Self {
             rgb: Three::new(r, g, b),
         }
     }
 }
 
-impl Into<Material> for Lambertian {
-    fn into(self) -> Material {
+impl<F> Into<Material<F>> for Lambertian<F> {
+    fn into(self) -> Material<F> {
         Material::Lambertian(self)
     }
 }
 
-impl Into<Material> for Metal {
-    fn into(self) -> Material {
+impl<F> Into<Material<F>> for Metal<F> {
+    fn into(self) -> Material<F> {
         Material::Metal(self)
     }
 }
 
-impl Into<Material> for Dielectric {
-    fn into(self) -> Material {
+impl<F> Into<Material<F>> for Dielectric<F> {
+    fn into(self) -> Material<F> {
         Material::Dielectric(self)
     }
 }
 
-impl Into<Material> for DiffuseLight {
-    fn into(self) -> Material {
+impl<F> Into<Material<F>> for DiffuseLight<F> {
+    fn into(self) -> Material<F> {
         Material::DiffuseLight(self)
     }
 }
 
-impl LinearTransform {
-    pub fn apply(&self, x: f64) -> f64 {
+impl<F> LinearTransform<F>
+where
+    F: Float,
+{
+    pub fn apply(&self, x: F) -> F {
         self.scale * x + self.offset
     }
 }
 
-impl FieldOfView {
-    pub fn radians(self) -> f64 {
+impl<F> FieldOfView<F>
+where
+    F: Float,
+{
+    pub fn radians(self) -> F {
         match self {
             Self::Degrees(v) => v.to_radians(),
             Self::Radians(v) => v,
@@ -411,20 +416,26 @@ impl FieldOfView {
     }
 }
 
-impl Camera {
-    pub fn new(fov: FieldOfView, image_shape: ImageShape) -> Self {
-        let tan_half_fov = (fov.radians() / 2.0).tan();
-        let aspect_ratio = image_shape.width as f64 / image_shape.height as f64;
+impl<F> Camera<F>
+where
+    F: Float,
+{
+    pub fn new(fov: FieldOfView<F>, image_shape: ImageShape) -> Self {
+        let two: F = F::from(2.0f64).unwrap();
+        let tan_half_fov = (fov.radians() / two).tan();
+        let w: F = cast(image_shape.width).unwrap();
+        let h: F = cast(image_shape.height).unwrap();
+        let aspect_ratio = w / h;
         Self {
-            position: Three::new(0.0, 0.0, 0.0),
+            position: Three::new(F::zero(), F::zero(), F::zero()),
             x_transform: LinearTransform {
                 // (2.0 * x / width - 1.0) * aspect_ratio & tan_half_fov
-                scale: 2.0 * aspect_ratio * tan_half_fov / image_shape.width as f64,
+                scale: two * aspect_ratio * tan_half_fov / w,
                 offset: -aspect_ratio * tan_half_fov,
             },
             y_transform: LinearTransform {
                 // (1.0 - 2.0 * y / height) * tanh_half_fov
-                scale: -2.0 * tan_half_fov / image_shape.height as f64,
+                scale: -two * tan_half_fov / h,
                 offset: tan_half_fov,
             },
             width: image_shape.width,
@@ -432,20 +443,20 @@ impl Camera {
         }
     }
 
-    pub fn at(&self, x: f64, y: f64, z: f64) -> Self {
+    pub fn at(&self, x: F, y: F, z: F) -> Self {
         let mut p = self.clone();
         p.position = Three::new(x, y, z);
         p
     }
 
-    pub(crate) fn empty_image(&self) -> Vec<Three<f64>> {
-        vec![Three::new(0.0, 0.0, 0.0); self.width * self.height]
+    pub(crate) fn empty_image(&self) -> Vec<Three<F>> {
+        vec![Three::new(F::zero(), F::zero(), F::zero()); self.width * self.height]
     }
 
-    pub(crate) fn ray_through(&self, x_screen: f64, y_screen: f64) -> Ray {
+    pub(crate) fn ray_through(&self, x_screen: F, y_screen: F) -> Ray<F> {
         let x_world = self.x_transform.apply(x_screen);
         let y_world = self.y_transform.apply(y_screen);
-        let direction = Three::new(x_world, y_world, -1.0).normalized();
+        let direction = Three::new(x_world, y_world, -F::one()).normalized();
         Ray {
             origin: self.position,
             direction,
