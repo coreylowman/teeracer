@@ -15,10 +15,7 @@ fn main() -> Result<(), image::error::ImageError> {
 
     // materials
     let white_lam = scene.add_material(Lambertian::rgb(1.0, 1.0, 1.0));
-    let green_metal = scene.add_material(Metal {
-        rgb: Three::new(0.25, 1.0, 0.25),
-        fuzz: None,
-    });
+    let green_mirror = scene.add_material(Mirror::tinted(0.25, 1.0, 0.25));
     let red_lam = scene.add_material(Lambertian::rgb(1.0, 0.25, 0.25));
     let blue_lam = scene.add_material(Lambertian::rgb(0.25, 0.25, 1.0));
     let water = scene.add_material(Dielectric { ior: 1.33 });
@@ -33,7 +30,7 @@ fn main() -> Result<(), image::error::ImageError> {
     scene.add_object(Sphere::unit_at(0.0, 3.0, -3.0), white_light);
 
     // objects
-    scene.add_object(Sphere::unit_at(-2.5, 0.5, -3.0), green_metal);
+    scene.add_object(Sphere::unit_at(-2.5, 0.5, -3.0), green_mirror);
     scene.add_object(Sphere::unit_at(2.0, 0.5, -5.0).scaled(1.5), red_lam);
     scene.add_object(Sphere::unit_at(-2.0, 2.0, -6.0).scaled(2.0), blue_lam);
     scene.add_object(Sphere::unit_at(-1.0, -0.5, -2.5).scaled(0.5), water);

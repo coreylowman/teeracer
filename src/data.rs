@@ -14,9 +14,8 @@ pub struct Lambertian<F> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Metal<F> {
+pub struct Mirror<F> {
     pub rgb: Three<F>,
-    pub fuzz: Option<F>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -33,7 +32,7 @@ pub struct DiffuseLight<F> {
 #[derive(Debug, Clone, Copy)]
 pub enum Material<F> {
     Lambertian(Lambertian<F>),
-    Metal(Metal<F>),
+    Mirror(Mirror<F>),
     Dielectric(Dielectric<F>),
     DiffuseLight(DiffuseLight<F>),
 }

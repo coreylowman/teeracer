@@ -371,6 +371,21 @@ impl<F> Lambertian<F> {
     }
 }
 
+impl<F> Mirror<F>
+where
+    F: Float,
+{
+    pub fn new() -> Self {
+        Self { rgb: Three::ones() }
+    }
+
+    pub fn tinted(r: F, g: F, b: F) -> Self {
+        Self {
+            rgb: Three::new(r, g, b),
+        }
+    }
+}
+
 impl<F> Material<F> {
     pub fn is_emissive(&self) -> bool {
         match self {
@@ -386,9 +401,9 @@ impl<F> Into<Material<F>> for Lambertian<F> {
     }
 }
 
-impl<F> Into<Material<F>> for Metal<F> {
+impl<F> Into<Material<F>> for Mirror<F> {
     fn into(self) -> Material<F> {
-        Material::Metal(self)
+        Material::Mirror(self)
     }
 }
 

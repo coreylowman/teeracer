@@ -1,9 +1,11 @@
-use crate::data::{CanHit, Dielectric, DiffuseLight, Hit, Lambertian, Material, Metal, Ray, Three};
+use crate::data::{
+    CanHit, Dielectric, DiffuseLight, Hit, Lambertian, Material, Mirror, Ray, Three,
+};
 use crate::scene::{Scene, SceneTracer};
 use num_traits::{Float, FloatConst, ToPrimitive};
 use rand::prelude::*;
 use rand_distr::uniform::SampleUniform;
-use rand_distr::{Distribution, Standard, UnitBall, UnitSphere};
+use rand_distr::{Distribution, Standard, UnitSphere};
 use std::ops::MulAssign;
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -67,7 +69,7 @@ where
 {
     match material {
         Material::Lambertian(m) => lambertian_interaction(m, hit, rng),
-        Material::Metal(m) => metal_interaction(m, ray, hit, rng),
+        Material::Mirror(m) => mirror_interaction(m, ray, hit),
         Material::Dielectric(m) => dielectric_interaction(m, ray, hit, rng),
         Material::DiffuseLight(m) => diffuse_light_interaction(m),
     }
@@ -93,25 +95,19 @@ where
     }
 }
 
-pub(crate) fn metal_interaction<F, R>(
-    metal: &Metal<F>,
+pub(crate) fn mirror_interaction<F>(
+    metal: &Mirror<F>,
     ray: &Ray<F>,
     hit: &Hit<F>,
-    rng: &mut R,
 ) -> MaterialInteraction<F>
 where
     F: Float + SampleUniform + MulAssign,
-    R: Rng,
 {
-    let mut direction = reflect(&ray.direction, &hit.normal);
-    if let Some(value) = metal.fuzz {
-        let mut noise = Three::from(UnitBall.sample(rng));
-        noise *= noise.dot(&hit.normal).signum() * value;
-        direction = (&direction + &noise).normalized();
-    }
     MaterialInteraction {
         attenuation: metal.rgb,
-        light_behavior: LightBehavior::Scatter { direction },
+        light_behavior: LightBehavior::Scatter {
+            direction: reflect(&ray.direction, &hit.normal),
+        },
     }
 }
 
@@ -137,17 +133,21 @@ where
     let cos_theta = cos_theta.abs();
     let sin_theta = (F::one() - cos_theta.powi(2)).sqrt();
 
-    // shclick approximation
-    let r0 = (F::one() - ratio) / (F::one() + ratio);
-    let r1 = r0 * r0;
-    let reflectance = r1 + (F::one() - r1) * (F::one() - cos_theta).powi(5);
-
-    let direction = if ratio * sin_theta > F::one() || reflectance > Standard.sample(rng) {
+    let direction = if ratio * sin_theta > F::one() {
         reflect(&ray.direction, &outward_normal)
     } else {
-        let perp = (&ray.direction + &(&outward_normal * cos_theta)) * ratio;
-        let para = &outward_normal * -(F::one() - perp.length_squared()).abs().sqrt();
-        (perp + para).normalized()
+        // shclick approximation
+        let r0 = (F::one() - ratio) / (F::one() + ratio);
+        let r1 = r0 * r0;
+        let reflectance = r1 + (F::one() - r1) * (F::one() - cos_theta).powi(5);
+
+        if reflectance > Standard.sample(rng) {
+            reflect(&ray.direction, &outward_normal)
+        } else {
+            let perp = (&ray.direction + &(&outward_normal * cos_theta)) * ratio;
+            let para = &outward_normal * -(F::one() - perp.length_squared()).abs().sqrt();
+            (perp + para).normalized()
+        }
     };
 
     MaterialInteraction {

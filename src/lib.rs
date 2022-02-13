@@ -7,7 +7,7 @@ pub mod tracer;
 
 pub use data::{
     Camera, CanHit, Dielectric, DiffuseLight, FieldOfView, Hit, ImageShape, Lambertian, Material,
-    Metal, Ray, Three,
+    Mirror, Ray, Three,
 };
 pub use rendering::render;
 pub use scene::{Scene, SceneTracer};
