@@ -1,3 +1,4 @@
+mod emitters;
 mod plane;
 mod prism;
 mod sphere;
@@ -11,6 +12,7 @@ pub use triangle::Triangle;
 use crate::data::{CanHit, Hit, Ray};
 use num_traits::Float;
 
+#[derive(Debug, Clone)]
 pub enum Object<F> {
     Plane(Plane<F>),
     Sphere(Sphere<F>),

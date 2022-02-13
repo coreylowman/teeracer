@@ -13,14 +13,19 @@ pub trait SceneTracer<F> {
 
 pub struct Scene<F> {
     objects: Vec<Object<F>>,
+    emissive_objects: Vec<(usize, Object<F>)>,
     object_material_idx: Vec<MaterialIdx>,
     materials: Vec<Material<F>>,
 }
 
-impl<F> Scene<F> {
+impl<F> Scene<F>
+where
+    F: Clone,
+{
     pub fn new() -> Self {
         Self {
             objects: Vec::new(),
+            emissive_objects: Vec::new(),
             object_material_idx: Vec::new(),
             materials: Vec::new(),
         }
@@ -33,13 +38,22 @@ impl<F> Scene<F> {
     }
 
     pub fn add_object<O: Into<Object<F>>>(&mut self, obj: O, mat_idx: MaterialIdx) {
-        self.objects.push(obj.into());
+        let obj = obj.into();
+        let obj_idx = self.objects.len();
+        self.objects.push(obj.clone());
         self.object_material_idx.push(mat_idx);
+        if self.material_for(obj_idx).is_emissive() {
+            self.emissive_objects.push((obj_idx, obj));
+        }
     }
 
     pub fn material_for(&self, obj_idx: usize) -> &Material<F> {
         let mat_idx = self.object_material_idx[obj_idx];
         &self.materials[mat_idx.0]
+    }
+
+    pub fn emissive_objects(&self) -> &[(usize, Object<F>)] {
+        &self.emissive_objects
     }
 }
 

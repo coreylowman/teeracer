@@ -1,6 +1,7 @@
+use rand::Rng;
 use std::fmt::Debug;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Three<T> {
     pub x: T,
     pub y: T,
@@ -53,6 +54,12 @@ pub struct Hit<F> {
 
 pub trait CanHit<T, F> {
     fn shoot_at(&self, obj: &T, t_min: F, t_max: F) -> Option<Hit<F>>;
+}
+
+pub trait RayEmitter<F> {
+    fn emit_ray<R>(&self, rng: &mut R) -> Ray<F>
+    where
+        R: Rng;
 }
 
 pub enum FieldOfView<F> {

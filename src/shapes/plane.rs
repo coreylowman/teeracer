@@ -1,9 +1,10 @@
 use crate::data::{CanHit, Hit, Ray, Three};
 use num_traits::Float;
 
+#[derive(Debug, Clone)]
 pub struct Plane<F> {
-    center: Three<F>,
-    normal: Three<F>,
+    pub(super) center: Three<F>,
+    pub(super) normal: Three<F>,
 }
 
 impl<F> Plane<F>

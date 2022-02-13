@@ -1,9 +1,10 @@
 use crate::data::{CanHit, Hit, Ray, Three};
 use num_traits::Float;
 
+#[derive(Debug, Clone)]
 pub struct Sphere<F> {
-    center: Three<F>,
-    radius_squared: F,
+    pub(super) center: Three<F>,
+    pub(super) radius_squared: F,
 }
 
 impl<F> Sphere<F>

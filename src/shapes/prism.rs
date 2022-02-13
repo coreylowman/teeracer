@@ -4,7 +4,7 @@ use num_traits::Float;
 
 #[derive(Debug, Clone)]
 pub struct Prism<F> {
-    triangles: [Triangle<F>; 8],
+    pub(super) triangles: [Triangle<F>; 8],
 }
 
 impl<F> Prism<F>

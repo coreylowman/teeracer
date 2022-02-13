@@ -371,6 +371,15 @@ impl<F> Lambertian<F> {
     }
 }
 
+impl<F> Material<F> {
+    pub fn is_emissive(&self) -> bool {
+        match self {
+            Material::DiffuseLight(_) => true,
+            _ => false,
+        }
+    }
+}
+
 impl<F> Into<Material<F>> for Lambertian<F> {
     fn into(self) -> Material<F> {
         Material::Lambertian(self)

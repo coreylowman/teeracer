@@ -1,7 +1,7 @@
 use crate::data::{CanHit, Dielectric, DiffuseLight, Hit, Lambertian, Material, Metal, Ray, Three};
 use crate::scene::{Scene, SceneTracer};
-use num_traits::{Float, ToPrimitive};
-use rand::Rng;
+use num_traits::{Float, FloatConst, ToPrimitive};
+use rand::prelude::*;
 use rand_distr::uniform::SampleUniform;
 use rand_distr::{Distribution, Standard, UnitBall, UnitSphere};
 use std::ops::MulAssign;
@@ -11,22 +11,22 @@ pub struct PathTracer;
 
 impl<F> SceneTracer<F> for PathTracer
 where
-    F: Float + SampleUniform + MulAssign,
+    F: Float + SampleUniform + MulAssign + FloatConst,
     Standard: Distribution<F>,
 {
     fn trace<R>(mut ray: Ray<F>, scene: &Scene<F>, depth: usize, rng: &mut R) -> Option<Three<F>>
     where
         R: Rng,
     {
-        let min_t = F::from(1e-3f64).unwrap();
-        let max_t = F::infinity();
+        let t_min = F::from(1e-3f64).unwrap();
+        let t_max = F::infinity();
 
         let mut color = Three::ones();
         for _ in 0..depth {
-            let opt_hit = ray.shoot_at(scene, min_t, max_t);
+            let opt_hit = ray.shoot_at(scene, t_min, t_max);
             if let Some(hit) = opt_hit {
                 let material = scene.material_for(hit.object_index);
-                let interaction = material.interact(&ray, &hit, rng);
+                let interaction = material_interaction(material, &ray, &hit, rng);
                 color *= interaction.attenuation;
                 match interaction.light_behavior {
                     LightBehavior::Scatter { direction } => {
@@ -36,114 +36,135 @@ where
                     LightBehavior::Absorb => return Some(color),
                 }
             } else {
-                return None;
+                break;
             }
         }
         None
     }
 }
 
-struct MaterialInteraction<F> {
+pub(crate) struct MaterialInteraction<F> {
     attenuation: Three<F>,
     light_behavior: LightBehavior<F>,
 }
 
-enum LightBehavior<F> {
+#[derive(PartialEq, Eq)]
+pub(crate) enum LightBehavior<F> {
     Scatter { direction: Three<F> },
     Absorb,
 }
 
-impl<F> Material<F>
+pub(crate) fn material_interaction<F, R>(
+    material: &Material<F>,
+    ray: &Ray<F>,
+    hit: &Hit<F>,
+    rng: &mut R,
+) -> MaterialInteraction<F>
 where
+    R: Rng,
     F: Float + SampleUniform + MulAssign,
     Standard: Distribution<F>,
 {
-    fn interact<R: Rng>(&self, ray: &Ray<F>, hit: &Hit<F>, rng: &mut R) -> MaterialInteraction<F> {
-        match self {
-            Material::Lambertian(material) => material.interact(hit, rng),
-            Material::Metal(material) => material.interact(ray, hit, rng),
-            Material::Dielectric(material) => material.interact(ray, hit, rng),
-            Material::DiffuseLight(material) => material.interact(),
-        }
+    match material {
+        Material::Lambertian(m) => lambertian_interaction(m, hit, rng),
+        Material::Metal(m) => metal_interaction(m, ray, hit, rng),
+        Material::Dielectric(m) => dielectric_interaction(m, ray, hit, rng),
+        Material::DiffuseLight(m) => diffuse_light_interaction(m),
     }
 }
 
-impl<F> Lambertian<F>
+pub(crate) fn lambertian_interaction<F, R>(
+    lambertian: &Lambertian<F>,
+    hit: &Hit<F>,
+    rng: &mut R,
+) -> MaterialInteraction<F>
+where
+    R: Rng,
+    F: Float + SampleUniform + MulAssign,
+    Standard: Distribution<F>,
+{
+    let mut noise = Three::from(UnitSphere.sample(rng));
+    noise *= noise.dot(&hit.normal).signum(); // NOTE: make noise face in same direction as normal
+    let direction = (&hit.normal + &noise).normalized();
+    let cos_theta = direction.dot(&hit.normal).max(F::zero());
+    MaterialInteraction {
+        attenuation: &lambertian.rgb * cos_theta,
+        light_behavior: LightBehavior::Scatter { direction },
+    }
+}
+
+pub(crate) fn metal_interaction<F, R>(
+    metal: &Metal<F>,
+    ray: &Ray<F>,
+    hit: &Hit<F>,
+    rng: &mut R,
+) -> MaterialInteraction<F>
 where
     F: Float + SampleUniform + MulAssign,
+    R: Rng,
 {
-    fn interact<R: Rng>(&self, hit: &Hit<F>, rng: &mut R) -> MaterialInteraction<F> {
-        let mut noise = Three::from(UnitSphere.sample(rng));
-        noise *= noise.dot(&hit.normal).signum(); // NOTE: make noise face in same direction as normal
-        let direction = (&hit.normal + &noise).normalized();
-        let cos_theta = direction.dot(&hit.normal).max(F::zero());
-        MaterialInteraction {
-            attenuation: &self.rgb * cos_theta,
-            light_behavior: LightBehavior::Scatter { direction },
-        }
+    let mut direction = reflect(&ray.direction, &hit.normal);
+    if let Some(value) = metal.fuzz {
+        let mut noise = Three::from(UnitBall.sample(rng));
+        noise *= noise.dot(&hit.normal).signum() * value;
+        direction = (&direction + &noise).normalized();
+    }
+    MaterialInteraction {
+        attenuation: metal.rgb,
+        light_behavior: LightBehavior::Scatter { direction },
     }
 }
 
-impl<F> Metal<F>
-where
-    F: Float + SampleUniform + MulAssign,
-{
-    fn interact<R: Rng>(&self, ray: &Ray<F>, hit: &Hit<F>, rng: &mut R) -> MaterialInteraction<F> {
-        let mut direction = reflect(&ray.direction, &hit.normal);
-        if let Some(value) = self.fuzz {
-            let mut noise = Three::from(UnitBall.sample(rng));
-            noise *= noise.dot(&hit.normal).signum() * value;
-            direction = (&direction + &noise).normalized();
-        }
-        MaterialInteraction {
-            attenuation: self.rgb,
-            light_behavior: LightBehavior::Scatter { direction },
-        }
-    }
-}
-
-impl<F> Dielectric<F>
+pub(crate) fn dielectric_interaction<F, R>(
+    dielectric: &Dielectric<F>,
+    ray: &Ray<F>,
+    hit: &Hit<F>,
+    rng: &mut R,
+) -> MaterialInteraction<F>
 where
     F: Float + ToPrimitive + SampleUniform,
     Standard: Distribution<F>,
+    R: Rng,
 {
-    fn interact<R: Rng>(&self, ray: &Ray<F>, hit: &Hit<F>, rng: &mut R) -> MaterialInteraction<F> {
-        let cos_theta = ray.direction.dot(&hit.normal);
-        let exiting = cos_theta > F::zero();
-        let outward_normal = if exiting { -hit.normal } else { hit.normal };
-        let ratio = if exiting { self.ior } else { self.ior.recip() };
-        let cos_theta = cos_theta.abs();
-        let sin_theta = (F::one() - cos_theta.powi(2)).sqrt();
+    let cos_theta = ray.direction.dot(&hit.normal);
+    let exiting = cos_theta > F::zero();
+    let outward_normal = if exiting { -hit.normal } else { hit.normal };
+    let ratio = if exiting {
+        dielectric.ior
+    } else {
+        dielectric.ior.recip()
+    };
+    let cos_theta = cos_theta.abs();
+    let sin_theta = (F::one() - cos_theta.powi(2)).sqrt();
 
-        // shclick approximation
-        let r0 = (F::one() - ratio) / (F::one() + ratio);
-        let r1 = r0 * r0;
-        let reflectance = r1 + (F::one() - r1) * (F::one() - cos_theta).powi(5);
+    // shclick approximation
+    let r0 = (F::one() - ratio) / (F::one() + ratio);
+    let r1 = r0 * r0;
+    let reflectance = r1 + (F::one() - r1) * (F::one() - cos_theta).powi(5);
 
-        let direction = if ratio * sin_theta > F::one() || reflectance > Standard.sample(rng) {
-            reflect(&ray.direction, &outward_normal)
-        } else {
-            let perp = (&ray.direction + &(&outward_normal * cos_theta)) * ratio;
-            let para = &outward_normal * -(F::one() - perp.length_squared()).abs().sqrt();
-            (perp + para).normalized()
-        };
+    let direction = if ratio * sin_theta > F::one() || reflectance > Standard.sample(rng) {
+        reflect(&ray.direction, &outward_normal)
+    } else {
+        let perp = (&ray.direction + &(&outward_normal * cos_theta)) * ratio;
+        let para = &outward_normal * -(F::one() - perp.length_squared()).abs().sqrt();
+        (perp + para).normalized()
+    };
 
-        MaterialInteraction {
-            attenuation: Three::ones(),
-            light_behavior: LightBehavior::Scatter { direction },
-        }
+    MaterialInteraction {
+        attenuation: Three::ones(),
+        light_behavior: LightBehavior::Scatter { direction },
     }
 }
 
-impl<F> DiffuseLight<F>
+pub(crate) fn diffuse_light_interaction<F>(
+    diffuse_light: &DiffuseLight<F>,
+) -> MaterialInteraction<F>
 where
     F: Float,
 {
-    fn interact(&self) -> MaterialInteraction<F> {
-        MaterialInteraction {
-            attenuation: self.rgb * self.power,
-            light_behavior: LightBehavior::Absorb,
-        }
+    MaterialInteraction {
+        attenuation: diffuse_light.rgb * diffuse_light.power,
+        light_behavior: LightBehavior::Absorb,
     }
 }
 

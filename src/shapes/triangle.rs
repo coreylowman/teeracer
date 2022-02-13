@@ -3,9 +3,9 @@ use num_traits::Float;
 
 #[derive(Debug, Clone)]
 pub struct Triangle<F> {
-    v0: Three<F>,
-    v01: Three<F>,
-    v02: Three<F>,
+    pub(super) v0: Three<F>,
+    pub(super) v01: Three<F>,
+    pub(super) v02: Three<F>,
 }
 
 impl<F> Triangle<F>
