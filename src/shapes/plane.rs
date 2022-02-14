@@ -1,5 +1,6 @@
-use crate::data::{CanHit, Hit, Ray, Three};
+use crate::data::{CanHit, Hit, Ray, Surface, Three};
 use num_traits::Float;
+use rand::Rng;
 
 #[derive(Debug, Clone)]
 pub struct Plane<F> {
@@ -69,5 +70,18 @@ where
                     object_index: 0,
                 }
             })
+    }
+}
+
+impl<F> Surface<F> for Plane<F>
+where
+    F: Float,
+{
+    fn sample_point_on_surface<R: Rng>(&self, _rng: &mut R) -> Three<F> {
+        todo!("sample random offset... could be infinitely far from center")
+    }
+
+    fn normal_at_point(&self, _point: &Three<F>) -> Three<F> {
+        self.normal
     }
 }

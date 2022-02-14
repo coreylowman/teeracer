@@ -1,5 +1,7 @@
-use crate::data::{CanHit, Hit, Ray, Three};
+use crate::data::{CanHit, Hit, Ray, Surface, Three};
 use num_traits::Float;
+use rand::Rng;
+use rand_distr::{uniform::SampleUniform, Distribution, UnitSphere};
 
 #[derive(Debug, Clone)]
 pub struct Sphere<F> {
@@ -55,5 +57,20 @@ where
                 object_index: 0,
             }
         })
+    }
+}
+
+impl<F> Surface<F> for Sphere<F>
+where
+    F: Float + SampleUniform,
+{
+    fn sample_point_on_surface<R: Rng>(&self, rng: &mut R) -> Three<F> {
+        let distance = self.radius_squared.sqrt();
+        let direction = Three::from(UnitSphere.sample(rng));
+        &self.center + &(&direction * distance)
+    }
+
+    fn normal_at_point(&self, point: &Three<F>) -> Three<F> {
+        (point - &self.center).normalized()
     }
 }

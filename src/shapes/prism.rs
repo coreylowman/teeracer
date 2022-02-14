@@ -1,6 +1,8 @@
 use super::triangle::Triangle;
-use crate::data::{CanHit, Hit, Ray, Three};
+use crate::data::{CanHit, Hit, Ray, Surface, Three};
 use num_traits::Float;
+use rand::prelude::{Rng, SliceRandom};
+use rand_distr::{uniform::SampleUniform, Distribution, Standard};
 
 #[derive(Debug, Clone)]
 pub struct Prism<F> {
@@ -85,5 +87,22 @@ where
             }
         }
         opt_hit
+    }
+}
+
+impl<F> Surface<F> for Prism<F>
+where
+    F: Float + SampleUniform,
+    Standard: Distribution<F>,
+{
+    fn sample_point_on_surface<R: Rng>(&self, rng: &mut R) -> Three<F> {
+        self.triangles
+            .choose(rng)
+            .unwrap()
+            .sample_point_on_surface(rng)
+    }
+
+    fn normal_at_point(&self, _point: &Three<F>) -> Three<F> {
+        todo!("find triangle its on and return its normal")
     }
 }

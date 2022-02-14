@@ -55,10 +55,9 @@ pub trait CanHit<T, F> {
     fn shoot_at(&self, obj: &T, t_min: F, t_max: F) -> Option<Hit<F>>;
 }
 
-pub trait RayEmitter<F> {
-    fn emit_ray<R>(&self, rng: &mut R) -> Ray<F>
-    where
-        R: Rng;
+pub trait Surface<F> {
+    fn sample_point_on_surface<R: Rng>(&self, rng: &mut R) -> Three<F>;
+    fn normal_at_point(&self, point: &Three<F>) -> Three<F>;
 }
 
 pub enum FieldOfView<F> {

@@ -15,3 +15,8 @@ Examples with 1000 samples per pixel:
 `cargo run --release --example glass-prism`:
 
 ![glass-prism.png](glass-prism.png)
+
+# todos:
+- bidirectional
+- importance sample lights
+- shoot extra ray at light when sampling scatter direction, use that direction if hits light, otherwise random direction

@@ -1,5 +1,7 @@
-use crate::data::{CanHit, Hit, Ray, Three};
+use crate::data::{CanHit, Hit, Ray, Surface, Three};
 use num_traits::Float;
+use rand::Rng;
+use rand_distr::{uniform::SampleUniform, Distribution, Standard};
 
 #[derive(Debug, Clone)]
 pub struct Triangle<F> {
@@ -102,5 +104,28 @@ where
             normal,
             object_index: 0,
         })
+    }
+}
+
+impl<F> Surface<F> for Triangle<F>
+where
+    F: Float + SampleUniform,
+    Standard: Distribution<F>,
+{
+    fn sample_point_on_surface<R: Rng>(&self, rng: &mut R) -> Three<F> {
+        let (v0, v1, v2) = self.vertices();
+
+        let t1: F = Standard.sample(rng);
+        let p1 = v0 * (F::one() - t1) + v1 * t1;
+        let t2: F = Standard.sample(rng);
+        let p2 = v0 * (F::one() - t2) + v2 * t2;
+        let t3: F = Standard.sample(rng);
+        let p3 = v1 * (F::one() - t3) * v2 * t3;
+
+        (p1 + p2 + p3) / F::from(3.0f64).unwrap()
+    }
+
+    fn normal_at_point(&self, _point: &Three<F>) -> Three<F> {
+        self.normal()
     }
 }

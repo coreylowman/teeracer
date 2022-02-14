@@ -1,4 +1,3 @@
-mod emitters;
 mod plane;
 mod prism;
 mod sphere;
@@ -9,8 +8,10 @@ pub use prism::Prism;
 pub use sphere::Sphere;
 pub use triangle::Triangle;
 
-use crate::data::{CanHit, Hit, Ray};
+use crate::data::{CanHit, Hit, Ray, Surface, Three};
 use num_traits::Float;
+use rand::Rng;
+use rand_distr::{uniform::SampleUniform, Distribution, Standard};
 
 #[derive(Debug, Clone)]
 pub enum Object<F> {
@@ -30,6 +31,30 @@ where
             Object::Sphere(obj) => self.shoot_at(obj, t_min, t_max),
             Object::Triangle(obj) => self.shoot_at(obj, t_min, t_max),
             Object::Prism(obj) => self.shoot_at(obj, t_min, t_max),
+        }
+    }
+}
+
+impl<F> Surface<F> for Object<F>
+where
+    F: Float + SampleUniform,
+    Standard: Distribution<F>,
+{
+    fn sample_point_on_surface<R: Rng>(&self, rng: &mut R) -> Three<F> {
+        match self {
+            Object::Plane(obj) => obj.sample_point_on_surface(rng),
+            Object::Sphere(obj) => obj.sample_point_on_surface(rng),
+            Object::Triangle(obj) => obj.sample_point_on_surface(rng),
+            Object::Prism(obj) => obj.sample_point_on_surface(rng),
+        }
+    }
+
+    fn normal_at_point(&self, point: &Three<F>) -> Three<F> {
+        match self {
+            Object::Plane(obj) => obj.normal_at_point(point),
+            Object::Sphere(obj) => obj.normal_at_point(point),
+            Object::Triangle(obj) => obj.normal_at_point(point),
+            Object::Prism(obj) => obj.normal_at_point(point),
         }
     }
 }
