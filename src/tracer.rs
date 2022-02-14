@@ -24,20 +24,20 @@ where
 
         let mut color = Three::ones();
         for _ in 0..depth {
-            let opt_hit = ray.shoot_at(scene, t_min, t_max);
-            if let Some(hit) = opt_hit {
-                let material = scene.material_for(hit.object_index);
-                let interaction = material_interaction(material, &ray, &hit, rng);
-                color *= interaction.attenuation;
-                match interaction.light_behavior {
-                    LightBehavior::Scatter { direction } => {
-                        ray.origin = hit.position;
-                        ray.direction = direction;
+            match ray.shoot_at(scene, t_min, t_max) {
+                Some(hit) => {
+                    let material = scene.material_for(hit.object_index);
+                    let interaction = material_interaction(material, &ray, &hit, rng);
+                    color *= interaction.attenuation;
+                    match interaction.light_behavior {
+                        LightBehavior::Scatter { direction } => {
+                            ray.origin = hit.position;
+                            ray.direction = direction;
+                        }
+                        LightBehavior::Absorb => return Some(color),
                     }
-                    LightBehavior::Absorb => return Some(color),
                 }
-            } else {
-                break;
+                None => break,
             }
         }
         None
