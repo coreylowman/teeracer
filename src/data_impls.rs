@@ -363,7 +363,7 @@ where
     }
 }
 
-impl<F> Lambertian<F> {
+impl<F> Diffuse<F> {
     pub fn rgb(r: F, g: F, b: F) -> Self {
         Self {
             rgb: Three::new(r, g, b),
@@ -389,15 +389,15 @@ where
 impl<F> Material<F> {
     pub fn is_emissive(&self) -> bool {
         match self {
-            Material::DiffuseLight(_) => true,
+            Material::Light(_) => true,
             _ => false,
         }
     }
 }
 
-impl<F> Into<Material<F>> for Lambertian<F> {
+impl<F> Into<Material<F>> for Diffuse<F> {
     fn into(self) -> Material<F> {
-        Material::Lambertian(self)
+        Material::Diffuse(self)
     }
 }
 
@@ -413,9 +413,9 @@ impl<F> Into<Material<F>> for Dielectric<F> {
     }
 }
 
-impl<F> Into<Material<F>> for DiffuseLight<F> {
+impl<F> Into<Material<F>> for Light<F> {
     fn into(self) -> Material<F> {
-        Material::DiffuseLight(self)
+        Material::Light(self)
     }
 }
 

@@ -1,11 +1,10 @@
-use crate::data::{
-    CanHit, Dielectric, DiffuseLight, Hit, Lambertian, Material, Mirror, Ray, Three,
-};
+use crate::data::{CanHit, Dielectric, Diffuse, Hit, Light, Material, Mirror, Ray, Three};
+use crate::pdf::{CosinePDF, PDF};
 use crate::scene::{Scene, SceneTracer};
 use num_traits::{Float, FloatConst, ToPrimitive};
 use rand::prelude::*;
 use rand_distr::uniform::SampleUniform;
-use rand_distr::{Distribution, Standard, UnitSphere};
+use rand_distr::{Distribution, Standard};
 use std::ops::MulAssign;
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -64,34 +63,36 @@ pub(crate) fn material_interaction<F, R>(
 ) -> MaterialInteraction<F>
 where
     R: Rng,
-    F: Float + SampleUniform + MulAssign,
+    F: Float + SampleUniform + MulAssign + FloatConst,
     Standard: Distribution<F>,
 {
     match material {
-        Material::Lambertian(m) => lambertian_interaction(m, hit, rng),
+        Material::Diffuse(m) => diffuse_interaction(m, hit, rng),
         Material::Mirror(m) => mirror_interaction(m, ray, hit),
         Material::Dielectric(m) => dielectric_interaction(m, ray, hit, rng),
-        Material::DiffuseLight(m) => diffuse_light_interaction(m),
+        Material::Light(m) => light_interaction(m),
     }
 }
 
-pub(crate) fn lambertian_interaction<F, R>(
-    lambertian: &Lambertian<F>,
+pub(crate) fn diffuse_interaction<F, R>(
+    diffuse: &Diffuse<F>,
     hit: &Hit<F>,
     rng: &mut R,
 ) -> MaterialInteraction<F>
 where
     R: Rng,
-    F: Float + SampleUniform + MulAssign,
+    F: Float + SampleUniform + MulAssign + FloatConst,
     Standard: Distribution<F>,
 {
-    let mut noise = Three::from(UnitSphere.sample(rng));
-    noise *= noise.dot(&hit.normal).signum(); // NOTE: make noise face in same direction as normal
-    let direction = (&hit.normal + &noise).normalized();
-    let cos_theta = direction.dot(&hit.normal).max(F::zero());
+    let pdf = CosinePDF::oriented_towards(hit.normal);
+    let scatter_direction = pdf.sample(rng);
+    let density = pdf.value(&scatter_direction);
+    let lambertian_bsdf = (scatter_direction.dot(&hit.normal) * F::FRAC_1_PI()).abs();
     MaterialInteraction {
-        attenuation: &lambertian.rgb * cos_theta,
-        light_behavior: LightBehavior::Scatter { direction },
+        attenuation: &diffuse.rgb * lambertian_bsdf * density.recip(),
+        light_behavior: LightBehavior::Scatter {
+            direction: scatter_direction,
+        },
     }
 }
 
@@ -144,6 +145,7 @@ where
         if reflectance > Standard.sample(rng) {
             reflect(&ray.direction, &outward_normal)
         } else {
+            // refract
             let perp = (&ray.direction + &(&outward_normal * cos_theta)) * ratio;
             let para = &outward_normal * -(F::one() - perp.length_squared()).abs().sqrt();
             (perp + para).normalized()
@@ -156,9 +158,7 @@ where
     }
 }
 
-pub(crate) fn diffuse_light_interaction<F>(
-    diffuse_light: &DiffuseLight<F>,
-) -> MaterialInteraction<F>
+pub(crate) fn light_interaction<F>(diffuse_light: &Light<F>) -> MaterialInteraction<F>
 where
     F: Float,
 {
