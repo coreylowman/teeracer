@@ -42,7 +42,8 @@ fn main() -> Result<(), image::error::ImageError> {
     scene.add_object(Plane::facing_neg_y().shifted_back(4.0), white); // TOP
     scene.add_object(Plane::facing_pos_z().shifted_back(7.0), green); // FRONT
 
-    render::<PathTracer, f32, XorShiftRng>(scene, camera, 10, 1000).save("glass-prism.png")?;
+    let tracer = PathTracer { depth: 10 };
+    render::<PathTracer, f32, XorShiftRng>(tracer, scene, camera, 1000).save("glass-prism.png")?;
 
     Ok(())
 }

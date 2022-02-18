@@ -10,13 +10,13 @@ use rayon::prelude::*;
 use std::ops::AddAssign;
 
 pub fn render<T, F, R>(
+    tracer: T,
     scene: Scene<F>,
     camera: Camera<F>,
-    depth: usize,
     num_samples: usize,
 ) -> RgbImage
 where
-    T: SceneTracer<F> + Sync + Default,
+    T: SceneTracer<F> + Send + Sync + Default + 'static,
     F: Float + SampleUniform + Send + Sync + AddAssign + 'static,
     R: Rng + SeedableRng,
     Standard: Distribution<F>,
@@ -38,7 +38,7 @@ where
                 let jx = x + Standard.sample(&mut rng);
                 let jy = y + Standard.sample(&mut rng);
                 let ray = camera.ray_through(jx, jy);
-                let opt_color = T::trace(ray, &scene, depth, &mut rng);
+                let opt_color = tracer.trace(ray, &scene, &mut rng);
                 (pixel_idx, opt_color.unwrap_or(Three::zeros()))
             })
             .for_each_with(sender, |s, x| s.send(x).unwrap());

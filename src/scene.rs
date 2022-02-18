@@ -6,7 +6,7 @@ use num_traits::Float;
 use rand::Rng;
 
 pub trait SceneTracer<F> {
-    fn trace<R>(ray: Ray<F>, scene: &Scene<F>, depth: usize, rng: &mut R) -> Option<Three<F>>
+    fn trace<R>(&self, ray: Ray<F>, scene: &Scene<F>, rng: &mut R) -> Option<Three<F>>
     where
         R: Rng;
 }

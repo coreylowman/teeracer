@@ -8,14 +8,16 @@ use rand_distr::{Distribution, Standard};
 use std::ops::MulAssign;
 
 #[derive(Default, Debug, Clone, Copy)]
-pub struct PathTracer;
+pub struct PathTracer {
+    pub depth: usize,
+}
 
 impl<F> SceneTracer<F> for PathTracer
 where
     F: Float + SampleUniform + MulAssign + FloatConst,
     Standard: Distribution<F>,
 {
-    fn trace<R>(mut ray: Ray<F>, scene: &Scene<F>, depth: usize, rng: &mut R) -> Option<Three<F>>
+    fn trace<R>(&self, mut ray: Ray<F>, scene: &Scene<F>, rng: &mut R) -> Option<Three<F>>
     where
         R: Rng,
     {
@@ -23,7 +25,7 @@ where
         let t_max = F::infinity();
 
         let mut color = Three::ones();
-        for _ in 0..depth {
+        for _ in 0..self.depth {
             match ray.shoot_at(scene, t_min, t_max) {
                 Some(hit) => {
                     let material = scene.material_for(hit.object_index);
