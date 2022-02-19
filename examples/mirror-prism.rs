@@ -15,7 +15,7 @@ fn main() -> Result<(), image::error::ImageError> {
 
     // materials
     let white = scene.add_material(Diffuse::rgb(1.0, 1.0, 1.0));
-    let mirror = scene.add_material(Mirror::new());
+    let mirror = scene.add_material(Mirror::perfect());
     let red = scene.add_material(Diffuse::rgb(1.0, 0.25, 0.25));
     let blue = scene.add_material(Diffuse::rgb(0.25, 0.25, 1.0));
     let white_light = scene.add_material(Light {

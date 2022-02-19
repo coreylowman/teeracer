@@ -18,9 +18,9 @@ fn main() -> Result<(), image::error::ImageError> {
     let green_mirror = scene.add_material(Mirror::tinted(0.25, 1.0, 0.25));
     let red = scene.add_material(Diffuse::rgb(1.0, 0.25, 0.25));
     let blue = scene.add_material(Diffuse::rgb(0.25, 0.25, 1.0));
-    let water = scene.add_material(Dielectric { ior: 1.33 });
-    let crown_glass = scene.add_material(Dielectric { ior: 1.52 });
-    let diamond = scene.add_material(Dielectric { ior: 2.417 });
+    let water = scene.add_material(Dielectric::transparent(1.33));
+    let crown_glass = scene.add_material(Dielectric::transparent(1.52));
+    let diamond = scene.add_material(Dielectric::transparent(2.417));
     let white_light = scene.add_material(Light {
         rgb: Three::new(1.0, 1.0, 1.0),
         power: 5.0,

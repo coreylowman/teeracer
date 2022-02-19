@@ -22,7 +22,7 @@ fn main() -> Result<(), image::error::ImageError> {
         rgb: Three::new(1.0, 1.0, 1.0),
         power: 5.0,
     });
-    let crown_glass = scene.add_material(Dielectric { ior: 1.52 });
+    let crown_glass = scene.add_material(Dielectric::transparent(1.52));
 
     // lights
     scene.add_object(Sphere::unit_at(0.0, 3.0, -3.0), white_light);

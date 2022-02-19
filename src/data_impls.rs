@@ -375,13 +375,32 @@ impl<F> Mirror<F>
 where
     F: Float,
 {
-    pub fn new() -> Self {
+    pub fn perfect() -> Self {
         Self { rgb: Three::ones() }
     }
 
     pub fn tinted(r: F, g: F, b: F) -> Self {
         Self {
             rgb: Three::new(r, g, b),
+        }
+    }
+}
+
+impl<F> Dielectric<F>
+where
+    F: Float,
+{
+    pub fn transparent(ior: F) -> Self {
+        Self {
+            rgb: Three::ones(),
+            ior,
+        }
+    }
+
+    pub fn tint(self, r: F, g: F, b: F) -> Self {
+        Self {
+            rgb: Three::new(r, g, b),
+            ior: self.ior,
         }
     }
 }

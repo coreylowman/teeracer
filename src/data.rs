@@ -20,6 +20,7 @@ pub struct Mirror<F> {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Dielectric<F> {
+    pub rgb: Three<F>,
     pub ior: F,
 }
 
@@ -53,6 +54,16 @@ pub struct Hit<F> {
 
 pub trait CanHit<T, F> {
     fn shoot_at(&self, obj: &T, t_min: F, t_max: F) -> Option<Hit<F>>;
+}
+
+pub enum LightInteraction<F> {
+    Scatter {
+        direction: Three<F>,
+        attenuation: Three<F>,
+    },
+    Emit {
+        emission: Three<F>,
+    },
 }
 
 pub trait Surface<F> {

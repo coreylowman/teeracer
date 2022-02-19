@@ -3,18 +3,18 @@ use num_traits::{Float, FloatConst};
 use rand::Rng;
 use rand_distr::{Distribution, Standard};
 
-pub trait PDF<F> {
+pub trait HemisphereDistribution<F> {
     fn sample<R: Rng>(&self, rng: &mut R) -> Three<F>;
-    fn value(&self, v: &Three<F>) -> F;
+    fn pdf(&self, v: &Three<F>) -> F;
 }
 
-pub struct CosinePDF<F> {
+pub struct CosineHemisphereDistribution<F> {
     normal: Three<F>,
     u: Three<F>,
     v: Three<F>,
 }
 
-impl<F> CosinePDF<F>
+impl<F> CosineHemisphereDistribution<F>
 where
     F: Float,
 {
@@ -32,7 +32,7 @@ where
     }
 }
 
-impl<F> PDF<F> for CosinePDF<F>
+impl<F> HemisphereDistribution<F> for CosineHemisphereDistribution<F>
 where
     F: Float + FloatConst,
     Standard: Distribution<F>,
@@ -49,8 +49,8 @@ where
         &self.u * x + &self.v * y + &self.normal * z
     }
 
-    fn value(&self, v: &Three<F>) -> F {
-        // abs(cos_theta / pi)
-        (v.dot(&self.normal) * F::FRAC_1_PI()).abs()
+    fn pdf(&self, v: &Three<F>) -> F {
+        // abs(cos_theta) / pi
+        v.dot(&self.normal).abs() * F::FRAC_1_PI()
     }
 }
